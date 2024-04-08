@@ -16,6 +16,12 @@ DV.HIST = {
      rel_round = 0,
      abs_round = 0,
      ante = 0,
+   },
+   TYPES = {
+      SKIP = 0,
+      HAND = 1,
+      DISCARD = 2,
+      SHOP = 3
    }
 }
 
@@ -48,31 +54,47 @@ function G.FUNCS.evaluate_play()
 end
 
 function DV.HIST.new_hand(scoring_name, scoring_cards)
-   -- Played cards:
-   local last_cards = {}
+   local played_cards = {}
    for _, card in ipairs(G.play.cards) do
-      table.insert(last_cards, DV.HIST.get_card_data(card, scoring_cards))
+      table.insert(played_cards, DV.HIST.get_card_data(card, scoring_cards))
    end
-   -- Held cards:
-   local last_held = {}
+   local held_cards = {}
    for _, card in ipairs(G.hand.cards) do
-      table.insert(last_held, DV.HIST.get_card_data(card, nil))
+      table.insert(held_cards, DV.HIST.get_card_data(card, nil))
    end
-   -- Active jokers:
-   local last_jokers = {}
+   local active_jokers = {}
    for _, joker in pairs(G.jokers.cards) do
-      table.insert(last_jokers, DV.HIST.get_joker_data(joker))
+      table.insert(active_jokers, DV.HIST.get_joker_data(joker))
    end
 
    local new_entry = {type   = DV.HIST.TYPES.HAND,
                       name   = scoring_name,
-                      cards  = last_cards,
-                      held   = last_held,
-                      jokers = last_jokers,
+                      cards  = played_cards,
+                      held   = held_cards,
+                      jokers = active_jokers,
                       -- Globally-accessible values used during evaluate_play()
                       chips  = hand_chips,
                       mult   = mult}
    table.insert(DV.HIST.history[DV.HIST.latest.ante][DV.HIST.latest.rel_round], 1, new_entry)
+end
+
+DV.HIST._discard_cards = G.FUNCS.discard_cards_from_highlighted
+function G.FUNCS.discard_cards_from_highlighted(e, hook)
+   local discarded_cards = {}
+   for _, card in ipairs(G.hand.highlighted) do
+      table.insert(discarded_cards, DV.HIST.get_card_data(card))
+   end
+   local active_jokers = {}
+   for _, joker in ipairs(G.jokers.cards) do
+      table.insert(active_jokers, DV.HIST.get_joker_data(joker))
+   end
+
+   local new_entry = {type = DV.HIST.TYPES.DISCARD,
+                      cards = discarded_cards,
+                      jokers = active_jokers}
+   table.insert(DV.HIST.history[DV.HIST.latest.ante][DV.HIST.latest.rel_round], 1, new_entry)
+
+   DV.HIST._discard_cards(e, hook)
 end
 
 function DV.HIST.get_card_data(card_obj, scoring_cards)
@@ -104,7 +126,7 @@ function DV.HIST.get_joker_data(joker_obj)
    return {
       id = joker_obj.config.center.key,
       edition = joker_obj.edition,
-      ability = copy_table(joker_obj.ability)
+      -- ability = copy_table(joker_obj.ability)
    }
 end
 
@@ -417,7 +439,7 @@ function DV.HIST.get_joker_area(norm_width, jokers)
          G.P_CENTERS[joker.id])
 
       if joker.edition then card_obj:set_edition(joker.edition, true, true) end
-      card_obj.ability = joker.ability
+      -- card_obj.ability = joker.ability
 
       joker_area:emplace(card_obj)
    end
@@ -469,8 +491,10 @@ function DV.HIST.get_action_nodes(args)
    for _, action in ipairs(round_actions) do
       if action.type == DV.HIST.TYPES.SHOP then
          table.insert(all_nodes, DV.HIST.get_shop_node(action))
-      else
-         table.insert(all_nodes, DV.HIST.get_one_hand_node(hand_idx, action))
+      elseif action.type == DV.HIST.TYPES.HAND then
+         table.insert(all_nodes, DV.HIST.get_hand_node(hand_idx, action))
+      elseif action.type == DV.HIST.TYPES.DISCARD then
+         table.insert(all_nodes, DV.HIST.get_discard_node(hand_idx, action))
       end
       hand_idx = hand_idx - 1
    end
@@ -479,11 +503,11 @@ function DV.HIST.get_action_nodes(args)
    }}
 end
 
-function DV.HIST.get_one_hand_node(idx, hand)
+function DV.HIST.get_hand_node(idx, hand)
    local fmt_total = DV.HIST.format_number(math.floor(hand.chips*hand.mult), 1e9)
-   return {n=G.UIT.R, config={align = "cm", colour = darken(G.C.JOKER_GREY, 0.1), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_hand_overlay, args = hand}}}, nodes={
+   return {n=G.UIT.R, config={align = "cm", colour = lighten(G.C.BLUE, 0.25), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_hand_overlay, args = hand}}}, nodes={
       {n=G.UIT.C, config={align = "cm", minw = 0.8, padding = 0.05, r = 0.1, colour = G.C.L_BLACK}, nodes={
-        {n=G.UIT.T, config={text = idx .. ".", colour = G.C.FILTER, shadow = true, scale = 0.45}},
+         {n=G.UIT.T, config={text = idx .. ".", colour = G.C.FILTER, shadow = true, scale = 0.45}},
       }},
       {n=G.UIT.C, config={align = "cl", minw = 3.4}, nodes={
          {n=G.UIT.T, config={text = hand.name, color=G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}}
@@ -495,6 +519,17 @@ function DV.HIST.get_one_hand_node(idx, hand)
             {n=G.UIT.T, config={text = fmt_total, colour = G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}},
             {n=G.UIT.B, config={w = 0.1, h = 0.01}, nodes={}},
          }}
+      }}
+   }}
+end
+
+function DV.HIST.get_discard_node(idx, hand)
+   return {n=G.UIT.R, config={align = "cm", colour = lighten(G.C.RED, 0.25), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_hand_overlay, args = hand}}}, nodes={
+      {n=G.UIT.C, config={align = "cm", minw = 0.8, padding = 0.05, r = 0.1, colour = G.C.L_BLACK}, nodes={
+         {n=G.UIT.T, config={text = idx .. ".", colour = G.C.FILTER, shadow = true, scale = 0.45}},
+      }},
+      {n=G.UIT.C, config={align = "cl", minw = 7.4}, nodes={
+         {n=G.UIT.T, config={text = "Discard", color=G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}}
       }}
    }}
 end
@@ -548,7 +583,7 @@ end
 DV.HIST._create_tooltip = create_popup_UIBox_tooltip
 function create_popup_UIBox_tooltip(tooltip)
    if tooltip.dv == true then
-      return {n=G.UIT.ROOT, config = {align = "cm", padding = 0.05, r = 0.1, float = true, shadow = true, colour = lighten(G.C.GREY, 0.5)}, nodes=
+      return {n=G.UIT.ROOT, config = {align = "cm", padding = 0.05, r = 0.1, float = true, shadow = true, colour = lighten(G.C.GREY, 0.6)}, nodes=
                  {{n=G.UIT.C, config={align = "cm", padding = 0.05, r = 0.1, emboss = 0.05, colour = G.C.BLACK}, nodes={tooltip.filler.func(tooltip.filler.args)}}
                  }}
    end
