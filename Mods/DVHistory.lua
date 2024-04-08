@@ -48,75 +48,71 @@ function G.FUNCS.evaluate_play()
 end
 
 function DV.HIST.new_hand(scoring_name, scoring_cards)
-   local last_cards = DV.HIST.get_card_data(G.play.cards, scoring_cards)
-   local last_held = DV.HIST.get_card_data(G.hand.cards, nil)
-   local last_jokers = DV.HIST.get_last_jokers()
+   -- Played cards:
+   local last_cards = {}
+   for _, card in ipairs(G.play.cards) do
+      table.insert(last_cards, DV.HIST.get_card_data(card, scoring_cards))
+   end
+   -- Held cards:
+   local last_held = {}
+   for _, card in ipairs(G.hand.cards) do
+      table.insert(last_held, DV.HIST.get_card_data(card, nil))
+   end
+   -- Active jokers:
+   local last_jokers = {}
+   for _, joker in pairs(G.jokers.cards) do
+      table.insert(last_jokers, DV.HIST.get_joker_data(joker))
+   end
 
-   -- NOTE: hand_chips and mult are GLOBAL, so we could display Chips x Mult!
-
-   local new_entry = {name = scoring_name,
-                      cards = last_cards,
-                      held = last_held_cards,
+   local new_entry = {type   = DV.HIST.TYPES.HAND,
+                      name   = scoring_name,
+                      cards  = last_cards,
+                      held   = last_held,
                       jokers = last_jokers,
                       -- Globally-accessible values used during evaluate_play()
-                      chips = hand_chips,
-                      mult = mult}
+                      chips  = hand_chips,
+                      mult   = mult}
    table.insert(DV.HIST.history[DV.HIST.latest.ante][DV.HIST.latest.rel_round], 1, new_entry)
 end
 
-function DV.HIST.get_card_data(cards, scoring_cards)
-   local last_cards = {}
-   for _, card in ipairs(cards) do
-      local card_data = {}
+function DV.HIST.get_card_data(card_obj, scoring_cards)
+   local card_data = {}
 
-      if scoring_cards then
-         for _, scoring_card in ipairs(scoring_cards) do
-            if card.sort_id == scoring_card.sort_id then
-               card_data.scoring = true
-            end
-         end
-      else
-         card_data.scoring = true
-      end
-
-      local card_config = card.config.card
-      local suit = card_config.suit:sub(1, 1)
-      local value = card_config.value == "10" and "T" or card_config.value:sub(1, 1)
-      card_data.id = suit .. "_" .. value
-      card_data.type = card.config.center.key
-
-      if card.edition then
-         if card.edition.foil then card_data.edition = "foil"
-         elseif card.edition.holo then card_data.edition = "holo"
-         elseif card.edition.polychrome then card_data.edition = "poly"
+   if scoring_cards then
+      for _, scoring_card in ipairs(scoring_cards) do
+         if card_obj.sort_id == scoring_card.sort_id then
+            card_data.scoring = true
          end
       end
-
-      if card.seal then
-         card_data.seal = card.seal
-      end
-
-      table.insert(last_cards, card_data)
+   else
+      card_data.scoring = true -- Held cards are all considered 'scoring'
    end
-   return last_cards
+
+   local card_config = card_obj.config.card
+   local suit = card_config.suit:sub(1, 1)
+   local value = card_config.value == "10" and "T" or card_config.value:sub(1, 1)
+   card_data.id = suit .. "_" .. value
+   card_data.type = card_obj.config.center.key
+
+   card_data.edition = card_obj.edition
+   card_data.seal    = card_obj.seal
+   card_data.debuff  = card_obj.debuff
+   return card_data
 end
 
-function DV.HIST.get_last_jokers()
-   last_jokers = {}
-   for _, joker in pairs(G.jokers.cards) do
-      local joker_data = {}
-      joker_data.id = joker.config.center.key
+function DV.HIST.get_joker_data(joker_obj)
+   return {
+      id = joker_obj.config.center.key,
+      edition = joker_obj.edition,
+      ability = copy_table(joker_obj.ability)
+   }
+end
 
-      if joker.edition then
-         if joker.edition.foil then joker_data.edition = "foil"
-         elseif joker.edition.holo then joker_data.edition = "holo"
-         elseif joker.edition.polychrome then joker_data.edition = "poly"
-         end
-      end
-
-      table.insert(last_jokers, joker_data)
-   end
-   return last_jokers
+function DV.HIST.get_consumable_data(consumable_obj)
+   return {
+      id = consumable_obj.config.center.key,
+      edition = consumable_obj.edition
+   }
 end
 
 --
@@ -350,44 +346,50 @@ end
 -- USER INTERFACE (OVERLAY):
 --
 
-function DV.HIST.get_history_overlay(hand)
-   function get_cards_area_wrap()
-      return {n=G.UIT.C, config={align = "cm"}, nodes={
-       {n=G.UIT.R, config={align = "cm", no_fill = true}, nodes={
-         {n=G.UIT.O, config={object = DV.HIST.get_cards_area(hand.cards)}}
-       }},
-         {n=G.UIT.R, config={align = "cm"}, nodes={
-            {n=G.UIT.T, config={text = "Cards Played", padding = 0.05, colour = G.C.L_BLACK, scale = 0.3}}
-         }}
-      }}
-   end
-
-   function get_joker_area_wrap()
-      return {n=G.UIT.C, config={align = "cm"}, nodes={
-         {n=G.UIT.R, config={align = "cm", padding = 0, no_fill = true}, nodes={
-            {n=G.UIT.O, config={object = DV.HIST.get_joker_area(hand.jokers)}}
-         }},
-         {n=G.UIT.R, config={align = "cm"}, nodes={
-            {n=G.UIT.T, config={text = "Active Jokers", padding = 0.05, colour = G.C.L_BLACK, scale = 0.3}}
-         }}
-      }}
-   end
-
-   return {n=G.UIT.C, config={align = "cm"}, nodes = {
-      {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes = {
-         get_cards_area_wrap(),
-         {n=G.UIT.C, config={minw = 0.05, r = 0.2, colour = G.C.L_BLACK}, nodes={}},
-         get_joker_area_wrap()
+function DV.HIST.get_card_area_wrap(card_area, caption)
+   return {n=G.UIT.C, config={align = "cm"}, nodes={
+      {n=G.UIT.R, config={align = "cm", no_fill = true}, nodes={
+         {n=G.UIT.O, config={object = card_area}}
+      }},
+      {n=G.UIT.R, config={align = "cm"}, nodes={
+         {n=G.UIT.T, config={text = caption, padding = 0.05, colour = G.C.L_BLACK, scale = 0.3}}
       }}
    }}
 end
 
-function DV.HIST.get_cards_area(cards)
-   local cards_area = CardArea(
-      G.ROOM.T.x + 0.2*G.ROOM.T.w/2, G.ROOM.T.h,
-      4*G.CARD_W/1.6, G.CARD_H/1.6,
-      {card_limit = 5, type = 'title_2', highlight_limit = 0})
+function DV.HIST.get_hand_overlay(hand)
+   return {n=G.UIT.C, config={align = "cm"}, nodes = {
+      {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes = {
+         DV.HIST.get_card_area_wrap(DV.HIST.get_cards_area(4, hand.cards), "Cards Played"),
+         {n=G.UIT.C, config={minw = 0.05, r = 0.2, colour = G.C.L_BLACK}, nodes={}},
+         DV.HIST.get_card_area_wrap(DV.HIST.get_joker_area(4, hand.jokers), "Active Jokers"),
+      }}
+   }}
+end
 
+function DV.HIST.get_shop_overlay(shop)
+   return {n=G.UIT.C, config={align = "cm"}, nodes = {
+      {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes = {
+         DV.HIST.get_card_area_wrap(DV.HIST.get_joker_area(3, shop.jokers), "Jokers"),
+         {n=G.UIT.C, config={minw = 0.05, r = 0.2, colour = G.C.L_BLACK}, nodes={}},
+         DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(2, shop.consumables), "Consumables"),
+         {n=G.UIT.C, config={minw = 0.05, r = 0.2, colour = G.C.L_BLACK}, nodes={}},
+         DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(2, shop.boosters), "Packs"),
+         {n=G.UIT.C, config={minw = 0.05, r = 0.2, colour = G.C.L_BLACK}, nodes={}},
+         DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(2, shop.vouchers), "Vouchers"),
+      }}
+   }}
+end
+
+function DV.HIST.get_card_area(norm_width)
+   return CardArea(
+      G.ROOM.T.x + 0.2*G.ROOM.T.w/2, G.ROOM.T.h, -- Position (x,y)
+      norm_width * G.CARD_W/1.6, G.CARD_H/1.6,   -- Size     (w,h)
+      {card_w = G.CARD_W/1.8, type = "title_2", highlight_limit = 0})   -- Configuration
+end
+
+function DV.HIST.get_cards_area(norm_width, cards)
+   local cards_area = DV.HIST.get_card_area(norm_width)
    for _, card in ipairs(cards) do
       local card_obj = Card(
          cards_area.T.x + cards_area.T.w/2, cards_area.T.y, -- Create card in center of CardArea
@@ -396,43 +398,46 @@ function DV.HIST.get_cards_area(cards)
          G.P_CENTERS[card.type] -- Enhancement
       )
 
-      if card.edition == "foil" then card_obj:set_edition({foil = true}, true, true)
-      elseif card.edition == "holo" then card_obj:set_edition({holo = true}, true, true)
-      elseif card.edition == "poly" then card_obj:set_edition({polychrome = true}, true, true)
-      end
-
+      if card.edition then card_obj:set_edition(card.edition, true, true) end
       if card.seal then card_obj:set_seal(card.seal, true) end
-
       if not card.scoring then card_obj.greyed = true end
 
       cards_area:emplace(card_obj)
    end
-
    return cards_area
 end
 
-function DV.HIST.get_joker_area(jokers)
-   local joker_area = CardArea(
-      G.ROOM.T.x + 0.2*G.ROOM.T.w/2, G.ROOM.T.h,
-      4*G.CARD_W/1.6, G.CARD_H/1.6,
-      {card_limit = #G.jokers.cards, type = 'title_2', highlight_limit = 0})
-
+function DV.HIST.get_joker_area(norm_width, jokers)
+   local joker_area = DV.HIST.get_card_area(norm_width)
    for _, joker in ipairs(jokers) do
       local card_obj = Card(
          joker_area.T.x + joker_area.T.w/2, joker_area.T.y,
          G.CARD_W/1.6, G.CARD_H/1.6,
-      G.P_CENTERS.empty,
+         G.P_CENTERS.empty,
          G.P_CENTERS[joker.id])
 
-      if joker.edition == "foil" then card_obj:set_edition({foil = true}, true, true)
-      elseif joker.edition == "holo" then card_obj:set_edition({holo = true}, true, true)
-      elseif joker.edition == "poly" then card_obj:set_edition({polychrome = true}, true, true)
-      end
+      if joker.edition then card_obj:set_edition(joker.edition, true, true) end
+      card_obj.ability = joker.ability
 
       joker_area:emplace(card_obj)
    end
-
    return joker_area
+end
+
+function DV.HIST.get_consumable_area(norm_width, consumables)
+   local consumable_area = DV.HIST.get_card_area(norm_width)
+   for _, consumable in ipairs(consumables) do
+      local card_obj = Card(
+         consumable_area.T.x + consumable_area.T.w/2, consumable_area.T.y,
+         G.CARD_W/1.6, G.CARD_H/1.6,
+         nil,
+         G.P_CENTERS[consumable.id])
+
+      if consumable.edition then card_obj:set_edition(consumable.edition, true, true) end
+
+      consumable_area:emplace(card_obj)
+   end
+   return consumable_area
 end
 
 function DV.HIST.get_content(args)
@@ -442,15 +447,16 @@ function DV.HIST.get_content(args)
    then return empty end
 
    local data = DV.HIST.history[args.ante_num][args.rel_round_num]
-   if data.skipped then
+   if data[1] and data[1].type == DV.HIST.TYPES.SKIP then
       return DV.HIST.get_tag_node(args)
+   else
+      return DV.HIST.get_action_nodes(args)
    end
-   return DV.HIST.get_hand_nodes(args)
 end
 
-function DV.HIST.get_hand_nodes(args)
-   local round_hands = DV.HIST.history[args.ante_num][args.rel_round_num]
-   if #round_hands == 0 then 
+function DV.HIST.get_action_nodes(args)
+   local round_actions = DV.HIST.history[args.ante_num][args.rel_round_num]
+   if #round_actions == 0 then
       return {n=G.UIT.ROOT, config = {align = "tm", r = 0.1, colour = G.C.CLEAR}, nodes={
          {n=G.UIT.R, config={align = "cm"}, nodes={
             {n=G.UIT.O, config={object = DynaText({string = {"Play a Hand!"}, colours = {G.C.UI.TEXT_LIGHT}, scale = 0.6, bump = true})}}
@@ -458,19 +464,24 @@ function DV.HIST.get_hand_nodes(args)
       }}
    end
 
-   local hand_nodes = {}
-   for idx, hand in ipairs(round_hands) do
-      local true_hand_idx = #round_hands - (idx-1) -- They are stored in reverse order
-      table.insert(hand_nodes, DV.HIST.get_one_hand_node(true_hand_idx, hand))
+   local all_nodes = {}
+   local hand_idx = #round_actions
+   for _, action in ipairs(round_actions) do
+      if action.type == DV.HIST.TYPES.SHOP then
+         table.insert(all_nodes, DV.HIST.get_shop_node(action))
+      else
+         table.insert(all_nodes, DV.HIST.get_one_hand_node(hand_idx, action))
+      end
+      hand_idx = hand_idx - 1
    end
    return {n=G.UIT.ROOT, config = {align = "tm", r = 0.1, colour = G.C.CLEAR}, nodes={
-      {n=G.UIT.R, config={align = "cm", padding = 0.1, r = 0.1}, nodes=hand_nodes}
+      {n=G.UIT.R, config={align = "cm", padding = 0.1, r = 0.1}, nodes=all_nodes}
    }}
 end
 
 function DV.HIST.get_one_hand_node(idx, hand)
    local fmt_total = DV.HIST.format_number(math.floor(hand.chips*hand.mult), 1e9)
-   return {n=G.UIT.R, config={align = "cm", colour = darken(G.C.JOKER_GREY, 0.1), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_history_overlay, args = hand}}}, nodes={
+   return {n=G.UIT.R, config={align = "cm", colour = darken(G.C.JOKER_GREY, 0.1), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_hand_overlay, args = hand}}}, nodes={
       {n=G.UIT.C, config={align = "cm", minw = 0.8, padding = 0.05, r = 0.1, colour = G.C.L_BLACK}, nodes={
         {n=G.UIT.T, config={text = idx .. ".", colour = G.C.FILTER, shadow = true, scale = 0.45}},
       }},
@@ -484,6 +495,14 @@ function DV.HIST.get_one_hand_node(idx, hand)
             {n=G.UIT.T, config={text = fmt_total, colour = G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}},
             {n=G.UIT.B, config={w = 0.1, h = 0.01}, nodes={}},
          }}
+      }}
+   }}
+end
+
+function DV.HIST.get_shop_node(shop)
+   return {n=G.UIT.R, config={align = "cm", colour = darken(G.C.JOKER_GREY, 0.1), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_shop_overlay, args = shop}}}, nodes={
+      {n=G.UIT.C, config={align = "cm", minw = 8.2, padding = 0.05}, nodes={
+         {n=G.UIT.T, config={text = "Shop!", color=G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}}
       }}
    }}
 end
@@ -513,7 +532,7 @@ function DV.HIST.get_content_alignment(ante_num, rel_round_num)
    then return "cm" end
 
    local data = DV.HIST.history[ante_num][rel_round_num]
-   if data.skipped or #data == 0 then
+   if data.type == DV.HIST.TYPES.SKIP or #data == 0 then
       -- Align info text to center
       return "cm"
    else
@@ -556,8 +575,8 @@ DV.HIST._skip_blind = G.FUNCS.skip_blind
 function G.FUNCS.skip_blind(e)
    DV.HIST.inc_round()
    local tag_data = e.UIBox:get_UIE_by_ID("tag_container").config.ref_table
-   local new_entry = {skipped = true, tag_id = tag_data.key}
-   DV.HIST.history[DV.HIST.latest.ante][DV.HIST.latest.rel_round] = new_entry
+   local new_entry = {type = DV.HIST.TYPES.SKIP, tag_id = tag_data.key}
+   table.insert(DV.HIST.history[DV.HIST.latest.ante][DV.HIST.latest.rel_round], 1, new_entry)
    DV.HIST._skip_blind(e)
 end
 
@@ -605,4 +624,59 @@ function Game:start_run(args)
          ante = 0,
       }
    end
+end
+
+--
+-- SHOP:
+--
+
+function DV.HIST.get_shop_entry()
+   local new_entry = nil
+   local hist_entry = DV.HIST.history[DV.HIST.latest.ante][DV.HIST.latest.rel_round]
+   if hist_entry[1].type ~= DV.HIST.TYPES.SHOP then
+      new_entry = {type        = DV.HIST.TYPES.SHOP,
+                   jokers      = {},
+                   consumables = {},
+                   boosters    = {},
+                   vouchers    = {}}
+      table.insert(hist_entry, 1, new_entry)
+   else
+      new_entry = hist_entry[1]
+   end
+   return new_entry
+end
+
+DV.HIST._buy_from_shop = G.FUNCS.buy_from_shop
+function G.FUNCS.buy_from_shop(e)
+   local card = e.config.ref_table
+   if G.STATE == G.STATES.SHOP then
+      local shop_entry = DV.HIST.get_shop_entry()
+
+      if card.ability.set == "Joker" then
+         table.insert(shop_entry.jokers, DV.HIST.get_joker_data(card))
+      elseif card.ability.set == "Tarot" or card.ability.set == "Planet" or card.ability.set == "Spectral" then
+         table.insert(shop_entry.consumables, DV.HIST.get_consumable_data(card))
+      elseif card.ability.set == "Default" or card.ability.set == "Enhanced" then
+      -- TODO: Playing card bought
+      end
+   end
+
+   DV.HIST._buy_from_shop(e)
+end
+
+DV.HIST._use_card = G.FUNCS.use_card
+function G.FUNCS.use_card(e, mute, nosave)
+   local card = e.config.ref_table
+   if G.STATE == G.STATES.SHOP then
+      local shop_entry = DV.HIST.get_shop_entry()
+
+      -- Jokers, Tarots, Planets, Spectrals, and Playing Cards are handled in G.FUNCS.buy_from_shop.
+      if card.ability.set == "Booster" then
+         table.insert(shop_entry.boosters, DV.HIST.get_consumable_data(card))
+      elseif card.ability.set == "Voucher" then
+         table.insert(shop_entry.vouchers, DV.HIST.get_consumable_data(card))
+      end
+   end
+
+   DV.HIST._use_card(e, mute, nosave)
 end
