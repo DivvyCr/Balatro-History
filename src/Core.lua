@@ -69,14 +69,16 @@ function DV.HIST.new_hand(scoring_name, scoring_cards)
       table.insert(active_jokers, DV.HIST.get_joker_data(joker))
    end
 
-   local new_entry = {type   = DV.HIST.TYPES.HAND,
-                      name   = scoring_name,
-                      cards  = played_cards,
-                      held   = held_cards,
-                      jokers = active_jokers,
-                      -- Globally-accessible values used during evaluate_play()
-                      chips  = hand_chips,
-                      mult   = mult}
+   local new_entry = {
+      type   = DV.HIST.TYPES.HAND,
+      name   = scoring_name,
+      cards  = played_cards,
+      held   = held_cards,
+      jokers = active_jokers,
+      -- Globally-accessible values used during evaluate_play():
+      chips  = hand_chips,
+      mult   = mult
+   }
    table.insert(DV.HIST.history[DV.HIST.latest.ante][DV.HIST.latest.rel_round], 1, new_entry)
 end
 
@@ -107,11 +109,15 @@ function DV.HIST.get_shop_entry()
    local new_entry = nil
    local hist_entry = DV.HIST.history[DV.HIST.latest.ante][DV.HIST.latest.rel_round]
    if hist_entry[1].type ~= DV.HIST.TYPES.SHOP then
-      new_entry = {type        = DV.HIST.TYPES.SHOP,
-                   jokers      = {},
-                   consumables = {},
-                   boosters    = {},
-                   vouchers    = {}}
+      new_entry = {
+         type        = DV.HIST.TYPES.SHOP,
+         jokers      = {},
+         consumables = {},
+         boosters    = {},
+         vouchers    = {},
+         -- Only record bought playing cards if they can occur in shop:
+         play_cards  = (G.GAME.playing_card_rate > 0 and {} or nil)
+      }
       table.insert(hist_entry, 1, new_entry)
    else
       new_entry = hist_entry[1]
@@ -130,7 +136,7 @@ function G.FUNCS.buy_from_shop(e)
       elseif card.ability.set == "Tarot" or card.ability.set == "Planet" or card.ability.set == "Spectral" then
          table.insert(shop_entry.consumables, DV.HIST.get_consumable_data(card))
       elseif card.ability.set == "Default" or card.ability.set == "Enhanced" then
-      -- TODO: Playing card bought
+         table.insert(shop_entry.play_cards, DV.HIST.get_card_data(card))
       end
    end
 

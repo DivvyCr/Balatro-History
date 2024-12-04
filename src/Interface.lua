@@ -7,13 +7,9 @@ function G.UIDEF.run_info()
    return create_UIBox_generic_options({contents ={create_tabs(
       {tabs = {
          {
-            label = "History",
-            chosen = true,
-            tab_definition_function = G.UIDEF.history,
-         },
-         {
             label = localize('b_poker_hands'),
             tab_definition_function = create_UIBox_current_hands,
+            chosen = true,
          },
          {
             label = localize('b_blinds'),
@@ -22,6 +18,10 @@ function G.UIDEF.run_info()
          {
             label = localize('b_vouchers'),
             tab_definition_function = G.UIDEF.used_vouchers,
+         },
+         {
+            label = "History",
+            tab_definition_function = G.UIDEF.history,
          },
          G.GAME.stake > 1 and {
             label = localize('b_stake'),
@@ -167,12 +167,16 @@ function DV.HIST.get_hand_overlay(hand)
 end
 
 function DV.HIST.get_shop_overlay(shop)
-   return {n=G.UIT.C, config={align = "cm"}, nodes = {
+   return {n=G.UIT.C, config={align = "cm", padding = 0.2}, nodes = {
       {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes = {
          DV.HIST.get_card_area_wrap(DV.HIST.get_joker_area(3, shop.jokers), "Jokers"),
          {n=G.UIT.C, config={minw = 0.05, r = 0.2, colour = G.C.L_BLACK}, nodes={}},
-         DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(2, shop.consumables), "Consumables"),
-         {n=G.UIT.C, config={minw = 0.05, r = 0.2, colour = G.C.L_BLACK}, nodes={}},
+         DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(3, shop.consumables), "Consumables"),
+         -- Only show bought playing cards area if shop.play_cards is not nil:
+         (shop.play_cards and {n=G.UIT.C, config={minw = 0.05, r = 0.2, colour = G.C.L_BLACK}, nodes={}} or nil),
+         (shop.play_cards and DV.HIST.get_card_area_wrap(DV.HIST.get_cards_area(3, shop.play_cards), "Playing Cards") or nil),
+      }},
+      {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes = {
          DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(2, shop.boosters), "Packs"),
          {n=G.UIT.C, config={minw = 0.05, r = 0.2, colour = G.C.L_BLACK}, nodes={}},
          DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(2, shop.vouchers), "Vouchers"),
