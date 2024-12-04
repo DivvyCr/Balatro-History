@@ -324,10 +324,9 @@ function DV.HIST.get_shop_node(shop)
 end
 
 function DV.HIST.get_tag_node(args)
-   local data = DV.HIST.history[args.ante_num][args.rel_round_num]
+   local data = DV.HIST.history[args.ante_num][args.rel_round_num][1]
    local tag_ui, tag_sprite = Tag(data.tag_id):generate_UI()
 
-   local tag_node = {}
    return {n=G.UIT.ROOT, config={align = "cm", r = 0.1, colour = G.C.CLEAR}, nodes={
       {n=G.UIT.C, config={align = "cm"}, nodes={
          {n=G.UIT.R, config={align = "cm"}, nodes={
@@ -348,7 +347,7 @@ function DV.HIST.get_content_alignment(ante_num, rel_round_num)
    then return "cm" end
 
    local data = DV.HIST.history[ante_num][rel_round_num]
-   if data.type == DV.HIST.TYPES.SKIP or #data == 0 then
+   if #data == 0 or data[1].type == DV.HIST.TYPES.SKIP then
       -- Align info text to center
       return "cm"
    else
