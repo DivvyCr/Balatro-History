@@ -111,6 +111,7 @@ function DV.HIST.get_shop_entry()
    if hist_entry[1].type ~= DV.HIST.TYPES.SHOP then
       new_entry = {
          type        = DV.HIST.TYPES.SHOP,
+         dollars     = 0,
          jokers      = {},
          consumables = {},
          boosters    = {},
@@ -130,6 +131,8 @@ function G.FUNCS.buy_from_shop(e)
    local card = e.config.ref_table
    if G.STATE == G.STATES.SHOP then
       local shop_entry = DV.HIST.get_shop_entry()
+      -- TODO: Account for recuperated dollars from cards like Hermit?
+      shop_entry.dollars = shop_entry.dollars + card.cost
 
       if card.ability.set == "Joker" then
          table.insert(shop_entry.jokers, DV.HIST.get_joker_data(card))
@@ -148,6 +151,7 @@ function G.FUNCS.use_card(e, mute, nosave)
    local card = e.config.ref_table
    if G.STATE == G.STATES.SHOP then
       local shop_entry = DV.HIST.get_shop_entry()
+      shop_entry.dollars = shop_entry.dollars + card.cost
 
       -- Jokers, Tarots, Planets, Spectrals, and Playing Cards are handled in G.FUNCS.buy_from_shop.
       if card.ability.set == "Booster" then

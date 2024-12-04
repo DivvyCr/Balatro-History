@@ -167,18 +167,19 @@ function DV.HIST.get_hand_overlay(hand)
 end
 
 function DV.HIST.get_shop_overlay(shop)
+   -- To show dividers between sections, set `colour = G.C.L_BLACK` on padding.
    return {n=G.UIT.C, config={align = "cm", padding = 0.2}, nodes = {
       {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes = {
          DV.HIST.get_card_area_wrap(DV.HIST.get_joker_area(3, shop.jokers), "Jokers"),
-         {n=G.UIT.C, config={minw = 0.05, r = 0.2, colour = G.C.L_BLACK}, nodes={}},
+         {n=G.UIT.C, config={minw = 0.05, r = 0.2}, nodes={}},
          DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(3, shop.consumables), "Consumables"),
          -- Only show bought playing cards area if shop.play_cards is not nil:
-         (shop.play_cards and {n=G.UIT.C, config={minw = 0.05, r = 0.2, colour = G.C.L_BLACK}, nodes={}} or nil),
+         (shop.play_cards and {n=G.UIT.C, config={minw = 0.05, r = 0.2}, nodes={}} or nil),
          (shop.play_cards and DV.HIST.get_card_area_wrap(DV.HIST.get_cards_area(3, shop.play_cards), "Playing Cards") or nil),
       }},
       {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes = {
          DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(2, shop.boosters), "Packs"),
-         {n=G.UIT.C, config={minw = 0.05, r = 0.2, colour = G.C.L_BLACK}, nodes={}},
+         {n=G.UIT.C, config={minw = 0.05, r = 0.2}, nodes={}},
          DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(2, shop.vouchers), "Vouchers"),
       }}
    }}
@@ -316,11 +317,23 @@ function DV.HIST.get_discard_node(idx, hand)
 end
 
 function DV.HIST.get_shop_node(shop)
-   return {n=G.UIT.R, config={align = "cm", colour = darken(G.C.JOKER_GREY, 0.1), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_shop_overlay, args = shop}}}, nodes={
-      {n=G.UIT.C, config={align = "cm", minw = 8.2, padding = 0.05}, nodes={
-         {n=G.UIT.T, config={text = "Shop!", color=G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}}
+   local shop_node = {n=G.UIT.R, config={align = "cm", colour = darken(G.C.JOKER_GREY, 0.2), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_shop_overlay, args = shop}}}, nodes={
+      -- Force left padding to make 'Shop' text centered (accounting for dollars on the right):
+      {n=G.UIT.C, config={align = "cl", minw = 2, padding = 0.05}, nodes={}},
+      -- Content:
+      {n=G.UIT.C, config={align = "cm", minw = 2, padding = 0.05}, nodes={
+         {n=G.UIT.T, config={text = "Shop", color=G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}}
+      }},
+      {n=G.UIT.C, config={align = "cr", minw = 2}, nodes={
+         {n=G.UIT.C, config={align = "cm", padding = 0.05, r = 0.1, colour = G.C.BLACK}, nodes={
+            {n=G.UIT.B, config={w = 0.05, h = 0.01}, nodes={}},
+            {n=G.UIT.T, config={text = ("-$" .. shop.dollars), colour = G.C.MONEY, shadow = true, scale = 0.45}},
+            {n=G.UIT.B, config={w = 0.1, h = 0.01}, nodes={}},
+         }}
       }}
    }}
+   -- Wrap shop node to make it narrower than hand/discard nodes:
+   return {n=G.UIT.R, config={align = "cm", maxw = 6}, nodes={shop_node}}
 end
 
 function DV.HIST.get_tag_node(args)
