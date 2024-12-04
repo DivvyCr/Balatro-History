@@ -287,12 +287,12 @@ end
 
 function DV.HIST.get_hand_node(idx, hand)
    local fmt_total = DV.HIST.format_number(math.floor(hand.chips*hand.mult), 1e9)
-   return {n=G.UIT.R, config={align = "cm", colour = lighten(G.C.BLUE, 0.25), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_hand_overlay, args = hand}}}, nodes={
+   return {n=G.UIT.R, config={align = "cm", colour = darken(G.C.JOKER_GREY, 0.1), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_hand_overlay, args = hand}}}, nodes={
       {n=G.UIT.C, config={align = "cm", minw = 0.8, padding = 0.05, r = 0.1, colour = G.C.L_BLACK}, nodes={
-         {n=G.UIT.T, config={text = idx .. ".", colour = G.C.FILTER, shadow = true, scale = 0.45}},
+          {n=G.UIT.T, config={text = idx .. ".", colour=lighten(G.C.BLUE, 0.1), shadow = true, scale = 0.45}},
       }},
-      {n=G.UIT.C, config={align = "cl", minw = 3.4}, nodes={
-         {n=G.UIT.T, config={text = hand.name, color=G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}}
+      {n=G.UIT.C, config={align = "cl", minw = 3.4, padding = 0.05}, nodes={
+         {n=G.UIT.T, config={text = hand.name, colour=G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}}
       }},
       {n=G.UIT.C, config={align = "cr", minw = 4}, nodes={
          {n=G.UIT.C, config={align = "cm", padding = 0.05, r = 0.1, colour = G.C.BLACK}, nodes={
@@ -306,23 +306,23 @@ function DV.HIST.get_hand_node(idx, hand)
 end
 
 function DV.HIST.get_discard_node(idx, hand)
-   return {n=G.UIT.R, config={align = "cm", colour = lighten(G.C.RED, 0.25), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_hand_overlay, args = hand}}}, nodes={
+   return {n=G.UIT.R, config={align = "cm", colour = darken(G.C.JOKER_GREY, 0.1), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_hand_overlay, args = hand}}}, nodes={
       {n=G.UIT.C, config={align = "cm", minw = 0.8, padding = 0.05, r = 0.1, colour = G.C.L_BLACK}, nodes={
-         {n=G.UIT.T, config={text = idx .. ".", colour = G.C.FILTER, shadow = true, scale = 0.45}},
+          {n=G.UIT.T, config={text = idx .. ".", colour=lighten(G.C.RED, 0.1), shadow = true, scale = 0.45}},
       }},
-      {n=G.UIT.C, config={align = "cl", minw = 7.4}, nodes={
-         {n=G.UIT.T, config={text = "Discard", color=G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}}
+      {n=G.UIT.C, config={align = "cl", minw = 7.4, padding = 0.05}, nodes={
+          {n=G.UIT.T, config={text = "Discard", colour=G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}}
       }}
    }}
 end
 
 function DV.HIST.get_shop_node(shop)
-   local shop_node = {n=G.UIT.R, config={align = "cm", colour = darken(G.C.JOKER_GREY, 0.2), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_shop_overlay, args = shop}}}, nodes={
+   local shop_node = {n=G.UIT.R, config={align = "cm", colour = darken(G.C.JOKER_GREY, 0.1), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_shop_overlay, args = shop}}}, nodes={
       -- Force left padding to make 'Shop' text centered (accounting for dollars on the right):
       {n=G.UIT.C, config={align = "cl", minw = 2, padding = 0.05}, nodes={}},
       -- Content:
       {n=G.UIT.C, config={align = "cm", minw = 2, padding = 0.05}, nodes={
-         {n=G.UIT.T, config={text = "Shop", color=G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}}
+         {n=G.UIT.T, config={text = "Shop", colour=G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}}
       }},
       {n=G.UIT.C, config={align = "cr", minw = 2}, nodes={
          {n=G.UIT.C, config={align = "cm", padding = 0.05, r = 0.1, colour = G.C.BLACK}, nodes={
