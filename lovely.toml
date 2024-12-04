@@ -23,6 +23,7 @@ target = "main.lua"
 position = "append"
 sources = [
   "Core.lua",
+  "Runs.lua",
   "Utils.lua"
 ]
 
@@ -31,3 +32,33 @@ sources = [
 target = "functions/UI_definitions.lua"
 position = "append"
 sources = [ "Interface.lua" ]
+
+[[patches]]
+[patches.pattern]
+target = "game.lua"
+pattern = "G.FILE_HANDLER.force = false"
+position = "before"
+match_indent = true
+overwrite = false
+payload = "DV.HIST.queue_save_manager()"
+
+# Below are extensions to engine/save_manager.lua;
+# special considerations are needed, because the save manager runs on a thread.
+
+[[patches]]
+[patches.module]
+source = "SaveManager.lua"
+before = "engine/save_manager.lua"
+name = "DV"
+
+[[patches]]
+[patches.pattern]
+target = "engine/save_manager.lua"
+pattern = "compress_and_save(prefix_profile..'save.jkr', request.save_table)"
+position = "after"
+match_indent = true
+overwrite = false
+payload = '''
+elseif request.type == 'store_run' then
+  DV.HIST.execute_save_manager(request)
+'''
