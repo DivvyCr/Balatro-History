@@ -24,7 +24,21 @@ function Game:start_run(args)
          abs_round = 0,
          ante = 0,
       }
+
+      if not G.GAME.DV then G.GAME.DV = {} end
+      G.GAME.DV.run_id = DV.HIST.simple_uuid()
    end
+end
+
+function DV.HIST.simple_uuid()
+   math.randomseed(os.time())
+   local ret = ""
+   local len = 12
+   for i = 1, len do
+      ret = ret .. string.format("%x", math.random(0, 0xf))
+      if i % 4 == 0 and i < len then ret = ret .. "-" end
+   end
+   return ret
 end
 
 --
@@ -246,4 +260,39 @@ function DV.HIST.update_buttons(hist_uibox)
      definition = DV.HIST.create_button("bwd"),
      config = {parent = bwd_button, type = "cm"}
    })
+end
+
+--
+-- SELECT RUN:
+--
+
+function G.FUNCS.dv_hist_select_run(e)
+   if not e then return end
+   G.FUNCS.overlay_menu({
+         definition = DV.HIST.view_stored_runs()
+   })
+end
+
+function G.FUNCS.dv_hist_update_runs_page(args)
+   if not args or not args.cycle_config then return end
+   local callback_args = args.cycle_config.dv
+
+   local runs_object = callback_args.ui
+   local runs_wrap = runs_object.parent
+
+   runs_wrap.config.object:remove()
+   runs_wrap.config.object = UIBox({
+         definition = DV.HIST.get_stored_runs({run_files = callback_args.rds, runs_per_page = callback_args.rpp, page_num = args.to_key}),
+         config = {parent = runs_wrap, type = "cm"}
+   })
+   runs_wrap.UIBox:recalculate()
+end
+
+function G.FUNCS.dv_hist_load_run(e)
+   if not e then return end
+
+   G.SAVED_GAME = get_compressed(G.SETTINGS.profile .."/DVHistory/".. e.config.ref_table.run_file)
+   if G.SAVED_GAME ~= nil then G.SAVED_GAME = STR_UNPACK(G.SAVED_GAME) end
+
+   G.FUNCS.setup_run(e)
 end

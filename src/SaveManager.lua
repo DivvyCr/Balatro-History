@@ -9,18 +9,79 @@ function DV.HIST.execute_save_manager(request)
    local profile = tostring(request.profile_num or 1)
    if not love.filesystem.getInfo(profile) then love.filesystem.createDirectory(profile) end
 
-   local file_dir = profile .. "/DVHistory"
-   if not love.filesystem.getInfo(file_dir) then love.filesystem.createDirectory(file_dir) end
+   local history_dir = profile .. "/DVHistory"
+   if not love.filesystem.getInfo(history_dir) then love.filesystem.createDirectory(history_dir) end
 
-   local file_name = DV.HIST.generate_filename(request.save_table)
-   local file_path = file_dir .. "/" .. file_name .. ".jkr"
-   compress_and_save(file_path, request.save_table)
+   local save_path
+   local file_name = DV.HIST.get_run_name(request.save_table)
+   if request.save_table.autosave_str then
+      save_path = DV.HIST.manage_autosaves(request, history_dir, file_name)
+      DV.HIST.prune_autosaves(history_dir)
+   else
+      save_path = history_dir .."/".. file_name .. ".jkr"
+   end
+
+   compress_and_save(save_path, request.save_table)
 end
 
-function DV.HIST.generate_filename(save_table)
-   local datetime = os.date("%Y%m%d-%H%M%S") 
-   local round = "Round-" .. save_table.HISTORY.latest.abs_round
-   return datetime .."_".. save_table.GAME.pseudorandom.seed .."_".. round
+function DV.HIST.manage_autosaves(request, history_dir, file_name)
+   local autosave_dir = history_dir .. "/autosaves"
+   if not love.filesystem.getInfo(autosave_dir) then love.filesystem.createDirectory(autosave_dir) end
+
+   local save_path = autosave_dir .. "/" .. file_name .. "_" .. request.save_table.autosave_str
+   local max_autosave_slots = 3
+   local next_autosave_slot = -1
+   for i = 1, max_autosave_slots do
+      if not love.filesystem.getInfo(DV.HIST.get_ith_autosave(save_path, i)) then
+         next_autosave_slot = i
+         break
+      end
+   end
+
+   if next_autosave_slot < 0 then
+      -- All slots filled, so remove the oldest:
+      love.filesystem.remove(DV.HIST.get_ith_autosave(save_path, 1))
+      -- 'Shift' existing autosaves:
+      local abs_path = love.filesystem.getRealDirectory(autosave_dir)
+      for i = 2, max_autosave_slots do
+         os.rename(DV.HIST.get_ith_autosave(abs_path .. "/" .. save_path, i),
+            DV.HIST.get_ith_autosave(abs_path .. "/" .. save_path, i - 1))
+      end
+      -- Fix `next_autosave_slot` value:
+      next_autosave_slot = max_autosave_slots
+   end
+
+   return DV.HIST.get_ith_autosave(save_path, next_autosave_slot)
 end
+
+function DV.HIST.prune_autosaves(history_dir)
+   local autosave_dir = history_dir .. "/autosaves"
+   if not love.filesystem.getInfo(autosave_dir) then love.filesystem.createDirectory(autosave_dir) end
+
+   local all_autosaves = love.filesystem.getDirectoryItems(autosave_dir)
+   if #all_autosaves > 9 then
+      table.sort(all_autosaves, function(f1, f2)
+         f1 = autosave_dir .."/".. f1
+         f2 = autosave_dir .."/".. f2
+         -- Oldest first:
+         return love.filesystem.getInfo(f1).modtime < love.filesystem.getInfo(f2).modtime
+      end)
+      -- Delete oldest:
+      for i = 1, (#all_autosaves - 9) do
+         love.filesystem.remove(autosave_dir .."/".. all_autosaves[i])
+      end
+   end
+end
+
+function DV.HIST.get_run_name(save_table)
+   local seed = save_table.GAME.pseudorandom.seed
+   local runid = save_table.GAME.DV.run_id
+   return seed .."_".. runid
+end
+
+function DV.HIST.get_ith_autosave(path, autosave_slot)
+   return path .. autosave_slot .. ".jkr"
+end
+
 
 return DV
