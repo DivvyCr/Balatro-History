@@ -284,22 +284,11 @@ function DV.HIST.get_card_area_wrap(card_area, caption)
    }}
 end
 
-function DV.HIST.get_card_area(norm_width)
-   return CardArea(
-      G.ROOM.T.x + 0.2*G.ROOM.T.w/2, G.ROOM.T.h, -- Position (x,y)
-      norm_width * G.CARD_W/1.6, G.CARD_H/1.6,   -- Size     (w,h)
-      {card_w = G.CARD_W/1.8, type = "title_2", highlight_limit = 0})   -- Configuration
-end
-
 function DV.HIST.get_cards_area(norm_width, cards)
-   local cards_area = DV.HIST.get_card_area(norm_width)
+   local card_scale = 0.5
+   local cards_area = DV.HIST.create_cardarea(norm_width, card_scale)
    for _, card in ipairs(cards) do
-      local card_obj = Card(
-         cards_area.T.x + cards_area.T.w/2, cards_area.T.y, -- Create card in center of CardArea
-         G.CARD_W/1.6, G.CARD_H/1.6,
-         G.P_CARDS[card.id],
-         G.P_CENTERS[card.type] -- Enhancement
-      )
+      local card_obj = DV.HIST.create_card(G.P_CARDS[card.id], G.P_CENTERS[card.type], card_scale)
 
       if card.edition then card_obj:set_edition(card.edition, true, true) end
       if card.seal then card_obj:set_seal(card.seal, true) end
@@ -311,13 +300,10 @@ function DV.HIST.get_cards_area(norm_width, cards)
 end
 
 function DV.HIST.get_joker_area(norm_width, jokers)
-   local joker_area = DV.HIST.get_card_area(norm_width)
+   local joker_scale = 0.5
+   local joker_area = DV.HIST.create_cardarea(norm_width, joker_scale)
    for _, joker in ipairs(jokers) do
-      local card_obj = Card(
-         joker_area.T.x + joker_area.T.w/2, joker_area.T.y,
-         G.CARD_W/1.6, G.CARD_H/1.6,
-         G.P_CENTERS.empty,
-         G.P_CENTERS[joker.id])
+      local card_obj = DV.HIST.create_card(G.P_CENTERS.empty, G.P_CENTERS[joker.id], joker_scale)
 
       if joker.edition then card_obj:set_edition(joker.edition, true, true) end
       -- card_obj.ability = joker.ability
@@ -328,13 +314,10 @@ function DV.HIST.get_joker_area(norm_width, jokers)
 end
 
 function DV.HIST.get_consumable_area(norm_width, consumables)
-   local consumable_area = DV.HIST.get_card_area(norm_width)
+   local consumable_scale = 0.5
+   local consumable_area = DV.HIST.create_cardarea(norm_width, consumable_scale)
    for _, consumable in ipairs(consumables) do
-      local card_obj = Card(
-         consumable_area.T.x + consumable_area.T.w/2, consumable_area.T.y,
-         G.CARD_W/1.6, G.CARD_H/1.6,
-         nil,
-         G.P_CENTERS[consumable.id])
+      local card_obj = DV.HIST.create_card(nil, G.P_CENTERS[consumable.id], consumable_scale)
 
       if consumable.edition then card_obj:set_edition(consumable.edition, true, true) end
 

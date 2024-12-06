@@ -35,11 +35,8 @@ end
 DV.HIST._run_setup_option = G.UIDEF.run_setup_option
 function G.UIDEF.run_setup_option(type)
    local ui = DV.HIST._run_setup_option(type)
-   if type == "New Run" then return ui end
 
-   -- TODO: Handle case when there is no 'Continue' run
-
-   ui.nodes[4].nodes[3].config = {align = "cm", minw = 2.1, minh = 0.8, padding = 0.2, r = 0.1, hover = true, shadow = true, colour = G.C.RED, button = "dv_hist_select_run"}
+   ui.nodes[4].nodes[3].config = {align = "cm", minw = 2.3, minh = 0.8, padding = 0.2, r = 0.1, hover = true, shadow = true, colour = G.C.RED, button = "dv_hist_select_run"}
 
    ui.nodes[4].nodes[3].nodes = {
       {n=G.UIT.R, config={align = "cm", padding = 0}, nodes = {
@@ -51,6 +48,26 @@ function G.UIDEF.run_setup_option(type)
    table.insert(ui.nodes[4].nodes, 3, button_padding)
 
    return ui
+end
+
+--
+-- CUSTOM CARDAREA:
+--
+
+function DV.HIST.create_card(prop1, prop2, card_scale)
+   if not card_scale then card_scale = 0.5 end
+   return Card(
+      0, 0,
+      card_scale * G.CARD_W, card_scale * G.CARD_H,
+      prop1, prop2)
+end
+
+function DV.HIST.create_cardarea(total_width_scale, card_scale)
+   return CardArea(
+      0, 0,
+      card_scale * G.CARD_W * total_width_scale,
+      card_scale * G.CARD_H * 1.1,
+      {card_w = card_scale * G.CARD_W, type = "title_2", highlight_limit = 0})
 end
 
 --
