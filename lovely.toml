@@ -7,9 +7,15 @@ priority = 10
 #
 # DVHistory/
 # ├─ Init.lua
-# ├─ Core.lua
+# ├─ RunHistory.lua
+# ├─ RunStorage.lua
+# ├─ SaveManager.lua
+# ├─ UI/
+# │  ├─ BaseUI.lua
+# │  ├─ RunHistoryUI.lua
+# │  ├─ RunStorageUI.lua
+# │  ├─ ButtonCallbacks.lua
 # ├─ Utils.lua
-# ├─ Interface.lua
 
 [[patches]]
 [patches.copy]
@@ -22,8 +28,8 @@ sources = [ "Init.lua" ]
 target = "main.lua"
 position = "append"
 sources = [
-  "Core.lua",
-  "Runs.lua",
+  "RunHistory.lua",
+  "RunStorage.lua",
   "Utils.lua"
 ]
 
@@ -31,7 +37,17 @@ sources = [
 [patches.copy]
 target = "functions/UI_definitions.lua"
 position = "append"
-sources = [ "Interface.lua" ]
+sources = [
+  "UI/BaseUI.lua",
+  "UI/RunHistoryUI.lua",
+  "UI/RunStorageUI.lua"
+]
+
+[[patches]]
+[patches.copy]
+target = "functions/button_callbacks.lua"
+position = "append"
+sources = [ "UI/ButtonCallbacks.lua" ]
 
 [[patches]]
 [patches.pattern]
