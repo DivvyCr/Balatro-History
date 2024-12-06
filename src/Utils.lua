@@ -118,7 +118,7 @@ end
 function DV.HIST.simple_uuid()
    math.randomseed(os.time())
    local ret = ""
-   local len = 12
+   local len = 8
    for i = 1, len do
       ret = ret .. string.format("%x", math.random(0, 0xf))
       if i % 4 == 0 and i < len then ret = ret .. "-" end
