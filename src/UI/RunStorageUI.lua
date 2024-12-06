@@ -103,14 +103,19 @@ end
 
 function DV.HIST.get_run_overlay(run)
    local scale = 0.3
+   local ov_width = 6
 
    return
       {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
-          -- Include date up top, if it exists:
-          (run.date_str and
+          -- Seed in the top-left, and save date in the top-right:
            {n=G.UIT.R, config={align = "cm"}, nodes={
-               {n=G.UIT.T, config={text = run.date_str, align = "cm", colour = G.C.UI.TEXT_LIGHT, scale = 0.25}}
-           }} or nil),
+               {n=G.UIT.C, config={align = "cl", minw = ov_width/2.2}, nodes={
+                   {n=G.UIT.T, config={text = "Seed: " .. run.GAME.pseudorandom.seed, align = "cl", colour = G.C.UI.TEXT_LIGHT, scale = 0.25}}
+               }},
+               {n=G.UIT.C, config={align = "cr", minw = ov_width/2.2}, nodes={
+                   {n=G.UIT.T, config={text = (run.date_str or ""), align = "cr", colour = G.C.UI.TEXT_LIGHT, scale = 0.25}}
+               }}
+           }},
 
           -- Main info:
           {n=G.UIT.R, config={align = "cm"}, nodes={
@@ -123,17 +128,22 @@ function DV.HIST.get_run_overlay(run)
               {n=G.UIT.C, config={align = "cm", r = 0.1, padding = 0.05, colour = lighten(G.C.BLACK, 0.15), float = true, shadow = true}, nodes=DV.HIST.get_run_summary_blind(run, scale)}
           }},
 
-          -- Jokers:
-          {n=G.UIT.R, config={align = "cm"}, nodes={
-              {n=G.UIT.O, config={object = DV.HIST.get_run_summary_jokers(run)}}
+          -- Cardareas:
+          {n=G.UIT.R, config={minh = 0.1}, nodes={}},
+          {n=G.UIT.R, config={align = "cm", minw = ov_width}, nodes={
+              DV.HIST.get_run_summary_cardarea(DV.HIST.get_run_summary_jokers(run), "Jokers", scale)
+          }},
+          {n=G.UIT.R, config={minh = 0.1}, nodes={}},
+          {n=G.UIT.R, config={align = "cm", minw = ov_width}, nodes={
+              DV.HIST.get_run_summary_cardarea(DV.HIST.get_run_summary_vouchers(run), "Vouchers", scale),
+              DV.HIST.get_run_summary_cardarea(DV.HIST.get_run_summary_consumables(run), "Consumables", scale)
           }}
-          -- TODO: Other card info? Eg. consumables, deck contents?
       }}
 end
 
 function DV.HIST.get_run_summary_deck(run_data)
    local deck_area = CardArea(
-      G.ROOM.T.x + 0.2*G.ROOM.T.w/2, G.ROOM.T.h,
+      0, 0,
       G.CARD_W/2, G.CARD_H/2,
       {card_limit = 1, type = "deck", highlight_limit = 0, deck_height = 0.6, thin_draw = 1}
    )
@@ -205,7 +215,6 @@ function DV.HIST.get_run_summary_blind(run_data, text_scale)
           {n=G.UIT.C, config={align = "cm"}, nodes={
               {n=G.UIT.O, config={object = blind_sprite}}
           }},
-          {n=G.UIT.C, config={minw = 0.1}, nodes={}},
           {n=G.UIT.C, config={align = "cm"}, nodes=DV.HIST.get_run_summary_blind_description(run_data, next_blind_key, text_scale)}
       }}
    }
@@ -259,22 +268,55 @@ function DV.HIST.get_run_summary_blind_description(run_data, next_blind_key, tex
    }
 end
 
+function DV.HIST.get_run_summary_cardarea(cardarea, label, text_scale)
+   local content = {n=G.UIT.T, config={text = "None", colour = G.C.UI.TEXT_INACTIVE, scale = 1.5 * text_scale}}
+   if #cardarea.cards > 0 then
+      content = {n=G.UIT.O, config={object = cardarea}}
+   end
+   return
+      {n=G.UIT.C, config={align = "cm"}, nodes={
+           -- Ensure card area wrap takes up at least half of overlay's width,
+           -- so that if the card area is empty, the text 'None' appears centered.
+           -- (if in doubt, remove minw/minh and see the result):
+          {n=G.UIT.R, config={align = "cm", minw = 2.5 * G.CARD_W/2, minh = G.CARD_H/2}, nodes={
+              content
+          }},
+          {n=G.UIT.R, config={align = "cm"}, nodes={
+              {n=G.UIT.T, config={text = label, colour = G.C.UI.TEXT_LIGHT, scale = text_scale}}
+          }}
+      }}
+end
+
 function DV.HIST.get_run_summary_jokers(run_data)
-   local joker_area = CardArea(
-      G.ROOM.T.x + 0.2*G.ROOM.T.w/2, G.ROOM.T.h,
-      5 * G.CARD_W/2, G.CARD_H/2,
-      {card_w = G.CARD_W/2, type = "title_2", highlight_limit = 0}
-   )
+   local joker_scale = 0.5
+   local joker_area = DV.HIST.create_cardarea(5, joker_scale)
 
    for _, joker_data in ipairs(run_data.cardAreas.jokers.cards) do
-      local c = Card(
-         0, 0, G.CARD_W/2, G.CARD_H/2,
-         G.P_CARDS.empty,
-         G.P_CENTERS[joker_data.save_fields.center]
-      )
+      local c = DV.HIST.create_card(G.P_CARDS.empty, G.P_CENTERS[joker_data.save_fields.center], joker_scale)
       c:set_edition(joker_data.edition)
       joker_area:emplace(c)
    end
-
    return joker_area
+end
+
+function DV.HIST.get_run_summary_consumables(run_data)
+   local consumable_scale = 0.5
+   local consumable_area = DV.HIST.create_cardarea(3, consumable_scale)
+
+   for _, consumable_data in ipairs(run_data.cardAreas.consumeables.cards) do
+      local c = DV.HIST.create_card(G.P_CARDS.empty, G.P_CENTERS[consumable_data.save_fields.center], consumable_scale)
+      consumable_area:emplace(c)
+   end
+   return consumable_area
+end
+
+function DV.HIST.get_run_summary_vouchers(run_data)
+   local voucher_scale = 0.5
+   local voucher_area = DV.HIST.create_cardarea(3, voucher_scale)
+
+   for voucher_key, _ in pairs(run_data.GAME.used_vouchers) do
+      local c = DV.HIST.create_card(G.P_CARDS.empty, G.P_CENTERS[voucher_key], voucher_scale)
+      voucher_area:emplace(c)
+   end
+   return voucher_area
 end

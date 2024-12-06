@@ -119,3 +119,12 @@ function G.FUNCS.dv_hist_load_run(e)
 
    G.FUNCS.setup_run(e)
 end
+
+-- Enable 'Continue' option, even when the default 'save.jkr' file is missing:
+DV.HIST._can_continue = G.FUNCS.can_continue
+function G.FUNCS.can_continue(e)
+   if e.config.func then
+      if G.SAVED_GAME and G.SAVED_GAME.VERSION and G.SAVED_GAME.VERSION >= "0.9.2" then return true end
+      return DV.HIST._can_continue(e)
+   end
+end
