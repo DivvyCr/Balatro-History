@@ -140,3 +140,15 @@ function G.FUNCS.can_continue(e)
       return DV.HIST._can_continue(e)
    end
 end
+
+--
+-- SETTINGS:
+-- 
+
+function G.FUNCS.dv_hist_set_run_autosaves(args)
+   G.SETTINGS.DV.autosaves_per_run = args.to_val
+end
+
+function G.FUNCS.dv_hist_set_total_autosaves(args)
+   G.SETTINGS.DV.autosaves_total = args.to_val
+end

@@ -29,10 +29,21 @@ DV.HIST = {
    }
 }
 
+DV.HIST._start_up = Game.start_up
+function Game:start_up()
+   DV.HIST._start_up(self)
+
+   if not G.SETTINGS.DV then G.SETTINGS.DV = {} end
+   G.SETTINGS.DV.autosave = true
+   G.SETTINGS.DV.autosaves_per_run = 5
+   G.SETTINGS.DV.autosaves_total = 10
+end
+
 DV.HIST._start_run = Game.start_run
 function Game:start_run(args)
    DV.HIST._start_run(self, args)
-   if not args.savetext then
+
+   if not args or not args.savetext then
       -- New run, so modify `GAME` table with custom storage:
       if not G.GAME.DV then G.GAME.DV = {} end
       G.GAME.DV.run_id = DV.HIST.simple_uuid()

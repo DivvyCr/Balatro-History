@@ -4,6 +4,8 @@
 
 -- The following is a customised version of functions/misc_functions.lua#save_run()
 function DV.HIST.store_run(autosave_type)
+   if autosave_type and not G.SETTINGS.DV.autosave then return end
+
    local card_areas = {}
    for k, v in pairs(G) do
       if (type(v) == "table") and v.is and v:is(CardArea) then
