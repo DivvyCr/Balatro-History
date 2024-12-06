@@ -1,36 +1,6 @@
---- Divvy's History for Balatro - Interface.lua
+--- Divvy's History for Balatro - UI/RunHistoryUI.lua
 --
--- The user interface components that display the recorded history.
-
--- Full override:
-function G.UIDEF.run_info()
-   return create_UIBox_generic_options({contents ={create_tabs(
-      {tabs = {
-         {
-            label = localize('b_poker_hands'),
-            tab_definition_function = create_UIBox_current_hands,
-            chosen = true,
-         },
-         {
-            label = localize('b_blinds'),
-            tab_definition_function = G.UIDEF.current_blinds,
-         },
-         {
-            label = localize('b_vouchers'),
-            tab_definition_function = G.UIDEF.used_vouchers,
-         },
-         {
-            label = "History",
-            tab_definition_function = G.UIDEF.history,
-         },
-         G.GAME.stake > 1 and {
-            label = localize('b_stake'),
-            tab_definition_function = G.UIDEF.current_stake,
-         } or nil,
-      },
-       tab_h = 8,
-       snap_to_nav = true})}})
-end
+-- All UI elements related to the display of history during a run.
 
 function G.UIDEF.history()
    DV.HIST.view.abs_round = DV.HIST.latest.abs_round
@@ -95,6 +65,23 @@ function G.UIDEF.history()
    }}
 end
 
+function DV.HIST.get_content_alignment(ante_num, rel_round_num)
+   if not DV.HIST.history[ante_num] or
+      not DV.HIST.history[ante_num][rel_round_num]
+   then return "cm" end
+
+   local data = DV.HIST.history[ante_num][rel_round_num]
+   if #data == 0 or data[1].type == DV.HIST.TYPES.SKIP then
+      -- Align info text to center
+      return "cm"
+   else
+      -- Align hand rows to top
+      return "tm"
+   end
+end
+
+-- NAVIGATION:
+
 function DV.HIST.create_button(dir)
    local placeholder = {n=G.UIT.ROOT, config={align = "cm", colour = G.C.CLEAR}, nodes={
      {n=G.UIT.C, config={button = "dv_hist_change_view", dir = dir, align = "cm", minw = 0.4, padding = 0.1, r = 0.2, colour = G.C.CLEAR}, nodes={}}
@@ -141,108 +128,7 @@ function DV.HIST.create_pip(rel_round_num)
    }}
 end
 
---
--- OVERLAY:
---
-
-function DV.HIST.get_card_area_wrap(card_area, caption)
-   return {n=G.UIT.C, config={align = "cm"}, nodes={
-      {n=G.UIT.R, config={align = "cm", no_fill = true}, nodes={
-         {n=G.UIT.O, config={object = card_area}}
-      }},
-      {n=G.UIT.R, config={align = "cm"}, nodes={
-         {n=G.UIT.T, config={text = caption, padding = 0.05, colour = G.C.L_BLACK, scale = 0.3}}
-      }}
-   }}
-end
-
-function DV.HIST.get_hand_overlay(hand)
-   return {n=G.UIT.C, config={align = "cm"}, nodes = {
-      {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes = {
-         DV.HIST.get_card_area_wrap(DV.HIST.get_cards_area(4, hand.cards), "Cards Played"),
-         {n=G.UIT.C, config={minw = 0.05, r = 0.2, colour = G.C.L_BLACK}, nodes={}},
-         DV.HIST.get_card_area_wrap(DV.HIST.get_joker_area(4, hand.jokers), "Active Jokers"),
-      }}
-   }}
-end
-
-function DV.HIST.get_shop_overlay(shop)
-   -- To show dividers between sections, set `colour = G.C.L_BLACK` on padding.
-   return {n=G.UIT.C, config={align = "cm", padding = 0.2}, nodes = {
-      {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes = {
-         DV.HIST.get_card_area_wrap(DV.HIST.get_joker_area(3, shop.jokers), "Jokers"),
-         {n=G.UIT.C, config={minw = 0.05, r = 0.2}, nodes={}},
-         DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(3, shop.consumables), "Consumables"),
-         -- Only show bought playing cards area if shop.play_cards is not nil:
-         (shop.play_cards and {n=G.UIT.C, config={minw = 0.05, r = 0.2}, nodes={}} or nil),
-         (shop.play_cards and DV.HIST.get_card_area_wrap(DV.HIST.get_cards_area(3, shop.play_cards), "Playing Cards") or nil),
-      }},
-      {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes = {
-         DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(2, shop.boosters), "Packs"),
-         {n=G.UIT.C, config={minw = 0.05, r = 0.2}, nodes={}},
-         DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(2, shop.vouchers), "Vouchers"),
-      }}
-   }}
-end
-
-function DV.HIST.get_card_area(norm_width)
-   return CardArea(
-      G.ROOM.T.x + 0.2*G.ROOM.T.w/2, G.ROOM.T.h, -- Position (x,y)
-      norm_width * G.CARD_W/1.6, G.CARD_H/1.6,   -- Size     (w,h)
-      {card_w = G.CARD_W/1.8, type = "title_2", highlight_limit = 0})   -- Configuration
-end
-
-function DV.HIST.get_cards_area(norm_width, cards)
-   local cards_area = DV.HIST.get_card_area(norm_width)
-   for _, card in ipairs(cards) do
-      local card_obj = Card(
-         cards_area.T.x + cards_area.T.w/2, cards_area.T.y, -- Create card in center of CardArea
-         G.CARD_W/1.6, G.CARD_H/1.6,
-         G.P_CARDS[card.id],
-         G.P_CENTERS[card.type] -- Enhancement
-      )
-
-      if card.edition then card_obj:set_edition(card.edition, true, true) end
-      if card.seal then card_obj:set_seal(card.seal, true) end
-      if not card.scoring then card_obj.greyed = true end
-
-      cards_area:emplace(card_obj)
-   end
-   return cards_area
-end
-
-function DV.HIST.get_joker_area(norm_width, jokers)
-   local joker_area = DV.HIST.get_card_area(norm_width)
-   for _, joker in ipairs(jokers) do
-      local card_obj = Card(
-         joker_area.T.x + joker_area.T.w/2, joker_area.T.y,
-         G.CARD_W/1.6, G.CARD_H/1.6,
-         G.P_CENTERS.empty,
-         G.P_CENTERS[joker.id])
-
-      if joker.edition then card_obj:set_edition(joker.edition, true, true) end
-      -- card_obj.ability = joker.ability
-
-      joker_area:emplace(card_obj)
-   end
-   return joker_area
-end
-
-function DV.HIST.get_consumable_area(norm_width, consumables)
-   local consumable_area = DV.HIST.get_card_area(norm_width)
-   for _, consumable in ipairs(consumables) do
-      local card_obj = Card(
-         consumable_area.T.x + consumable_area.T.w/2, consumable_area.T.y,
-         G.CARD_W/1.6, G.CARD_H/1.6,
-         nil,
-         G.P_CENTERS[consumable.id])
-
-      if consumable.edition then card_obj:set_edition(consumable.edition, true, true) end
-
-      consumable_area:emplace(card_obj)
-   end
-   return consumable_area
-end
+-- CONTENT:
 
 function DV.HIST.get_content(args)
    local empty = {n=G.UIT.ROOT, config={colour = G.C.CLEAR}, nodes={}}
@@ -354,142 +240,105 @@ function DV.HIST.get_tag_node(args)
    }}
 end
 
-function DV.HIST.get_content_alignment(ante_num, rel_round_num)
-   if not DV.HIST.history[ante_num] or
-      not DV.HIST.history[ante_num][rel_round_num]
-   then return "cm" end
-
-   local data = DV.HIST.history[ante_num][rel_round_num]
-   if #data == 0 or data[1].type == DV.HIST.TYPES.SKIP then
-      -- Align info text to center
-      return "cm"
-   else
-      -- Align hand rows to top
-      return "tm"
-   end
-end
-
 --
--- CUSTOM TOOLTIP:
+-- DETAIL OVERLAY:
 --
 
-DV.HIST._create_tooltip = create_popup_UIBox_tooltip
-function create_popup_UIBox_tooltip(tooltip)
-   if tooltip.dv == true then
-      return {n=G.UIT.ROOT, config = {align = "cm", padding = 0.05, r = 0.1, float = true, shadow = true, colour = lighten(G.C.GREY, 0.6)}, nodes=
-                 {{n=G.UIT.C, config={align = "cm", padding = 0.05, r = 0.1, emboss = 0.05, colour = G.C.BLACK}, nodes={tooltip.filler.func(tooltip.filler.args)}}
-                 }}
-   end
-   return DV.HIST._create_tooltip(tooltip)
-end
-
---
--- ...
---
-
-DV.HIST._run_setup_option = G.UIDEF.run_setup_option
-function G.UIDEF.run_setup_option(type)
-   local ui = DV.HIST._run_setup_option(type)
-   if type == "New Run" then return ui end
-
-   -- TODO: Handle case when there is no 'Continue' run
-
-   ui.nodes[4].nodes[3].config = {align = "cm", minw = 2.1, minh = 0.8, padding = 0.2, r = 0.1, hover = true, shadow = true, colour = G.C.RED, button = "dv_hist_select_run"}
-
-   ui.nodes[4].nodes[3].nodes = {
-      {n=G.UIT.R, config={align = "cm", padding = 0}, nodes = {
-          {n=G.UIT.T, config={text = "Select Run", scale = 0.4, colour = G.C.UI.TEXT_LIGHT}}
+function DV.HIST.get_hand_overlay(hand)
+   return {n=G.UIT.C, config={align = "cm"}, nodes = {
+      {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes = {
+         DV.HIST.get_card_area_wrap(DV.HIST.get_cards_area(4, hand.cards), "Cards Played"),
+         {n=G.UIT.C, config={minw = 0.05, r = 0.2, colour = G.C.L_BLACK}, nodes={}},
+         DV.HIST.get_card_area_wrap(DV.HIST.get_joker_area(4, hand.jokers), "Active Jokers"),
       }}
-   }
-
-   local button_padding = {n=G.UIT.C, config={align = "cm", minw = 0.2}, nodes={}}
-   table.insert(ui.nodes[4].nodes, 3, button_padding)
-
-   return ui
+   }}
 end
 
-function DV.HIST.get_stored_runs(args)
-   local run_files = args.run_files
-   local offset = (args.page_num - 1) * args.runs_per_page
-   local actual_runs_on_page = math.min((#run_files- offset), args.runs_per_page)
-
-   local run_nodes = {}
-   for i = 1, actual_runs_on_page do
-      local next_idx = offset + i
-      table.insert(run_nodes, DV.HIST.get_run_node(run_files[next_idx]))
-   end
-
-   return
-      {n=G.UIT.ROOT, config={align = "tm", minh = 6, r = 0.1, colour = G.C.CLEAR}, nodes={
-          {n=G.UIT.R, config={align = "cm", padding = 0.05, r = 0.1}, nodes=run_nodes}
+function DV.HIST.get_shop_overlay(shop)
+   -- To show dividers between sections, set `colour = G.C.L_BLACK` on padding.
+   return {n=G.UIT.C, config={align = "cm", padding = 0.2}, nodes = {
+      {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes = {
+         DV.HIST.get_card_area_wrap(DV.HIST.get_joker_area(3, shop.jokers), "Jokers"),
+         {n=G.UIT.C, config={minw = 0.05, r = 0.2}, nodes={}},
+         DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(3, shop.consumables), "Consumables"),
+         -- Only show bought playing cards area if shop.play_cards is not nil:
+         (shop.play_cards and {n=G.UIT.C, config={minw = 0.05, r = 0.2}, nodes={}} or nil),
+         (shop.play_cards and DV.HIST.get_card_area_wrap(DV.HIST.get_cards_area(3, shop.play_cards), "Playing Cards") or nil),
+      }},
+      {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes = {
+         DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(2, shop.boosters), "Packs"),
+         {n=G.UIT.C, config={minw = 0.05, r = 0.2}, nodes={}},
+         DV.HIST.get_card_area_wrap(DV.HIST.get_consumable_area(2, shop.vouchers), "Vouchers"),
       }}
+   }}
 end
 
-function DV.HIST.get_run_node(run_file)
-   local run_name = run_file
-   if string.sub(run_file, 1, 10) == "autosaves/" then
-      run_name = string.sub(run_file, 11)
-   end
-   return
-      {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
-          {n=G.UIT.R, config={button = "dv_hist_load_run", ref_table = {run_file = run_file}, align = "cl", minw = 8, colour = G.C.RED, padding = 0.1, r = 0.1, hover = true, shadow = true}, nodes={
-              {n=G.UIT.T, config={text = run_name, colour=G.C.UI.TEXT_LIGHT, scale = 0.45}}
-          }}
+function DV.HIST.get_card_area_wrap(card_area, caption)
+   return {n=G.UIT.C, config={align = "cm"}, nodes={
+      {n=G.UIT.R, config={align = "cm", no_fill = true}, nodes={
+         {n=G.UIT.O, config={object = card_area}}
+      }},
+      {n=G.UIT.R, config={align = "cm"}, nodes={
+         {n=G.UIT.T, config={text = caption, padding = 0.05, colour = G.C.L_BLACK, scale = 0.3}}
       }}
+   }}
 end
 
-function DV.HIST.view_stored_runs()
-   -- TODO: Ensure directories exist?
-   local history_dir = (G.SETTINGS.profile or 1) .. "/DVHistory"
-   local autosave_dir = history_dir .."/autosaves"
-   local run_files = love.filesystem.getDirectoryItems(autosave_dir)
-   for i, file in ipairs(run_files) do
-      run_files[i] = "autosaves/" .. run_files[i]
+function DV.HIST.get_card_area(norm_width)
+   return CardArea(
+      G.ROOM.T.x + 0.2*G.ROOM.T.w/2, G.ROOM.T.h, -- Position (x,y)
+      norm_width * G.CARD_W/1.6, G.CARD_H/1.6,   -- Size     (w,h)
+      {card_w = G.CARD_W/1.8, type = "title_2", highlight_limit = 0})   -- Configuration
+end
+
+function DV.HIST.get_cards_area(norm_width, cards)
+   local cards_area = DV.HIST.get_card_area(norm_width)
+   for _, card in ipairs(cards) do
+      local card_obj = Card(
+         cards_area.T.x + cards_area.T.w/2, cards_area.T.y, -- Create card in center of CardArea
+         G.CARD_W/1.6, G.CARD_H/1.6,
+         G.P_CARDS[card.id],
+         G.P_CENTERS[card.type] -- Enhancement
+      )
+
+      if card.edition then card_obj:set_edition(card.edition, true, true) end
+      if card.seal then card_obj:set_seal(card.seal, true) end
+      if not card.scoring then card_obj.greyed = true end
+
+      cards_area:emplace(card_obj)
    end
+   return cards_area
+end
 
-   -- Only collect files from `history_dir`:
-   for _, file in ipairs(love.filesystem.getDirectoryItems(history_dir)) do
-      if love.filesystem.isFile(history_dir .."/".. file) then
-         table.insert(run_files, file)
-      end
+function DV.HIST.get_joker_area(norm_width, jokers)
+   local joker_area = DV.HIST.get_card_area(norm_width)
+   for _, joker in ipairs(jokers) do
+      local card_obj = Card(
+         joker_area.T.x + joker_area.T.w/2, joker_area.T.y,
+         G.CARD_W/1.6, G.CARD_H/1.6,
+         G.P_CENTERS.empty,
+         G.P_CENTERS[joker.id])
+
+      if joker.edition then card_obj:set_edition(joker.edition, true, true) end
+      -- card_obj.ability = joker.ability
+
+      joker_area:emplace(card_obj)
    end
+   return joker_area
+end
 
-   table.sort(run_files, function(f1, f2)
-                 f1 = history_dir .."/".. f1
-                 f2 = history_dir .."/".. f2
-                 -- Newest first:
-                 return love.filesystem.getInfo(f1).modtime > love.filesystem.getInfo(f2).modtime
-   end)
+function DV.HIST.get_consumable_area(norm_width, consumables)
+   local consumable_area = DV.HIST.get_card_area(norm_width)
+   for _, consumable in ipairs(consumables) do
+      local card_obj = Card(
+         consumable_area.T.x + consumable_area.T.w/2, consumable_area.T.y,
+         G.CARD_W/1.6, G.CARD_H/1.6,
+         nil,
+         G.P_CENTERS[consumable.id])
 
-   local page_numbers = {}
-   local runs_per_page = 8
-   local total_pages = math.ceil(#run_files/runs_per_page)
-   for i = 1, total_pages do
-      table.insert(page_numbers, localize("k_page").." "..i.."/"..total_pages)
+      if consumable.edition then card_obj:set_edition(consumable.edition, true, true) end
+
+      consumable_area:emplace(card_obj)
    end
-
-   local runs = UIBox({
-      definition = DV.HIST.get_stored_runs({run_files = run_files, runs_per_page = runs_per_page, page_num = 1}),
-      config = {type = "cm"}
-   })
-
-   local callback_args = {
-      ui = runs,
-      rpp = runs_per_page,
-      rds = run_files,
-   }
-
-   local nav = {n=G.UIT.R, config={align = "cm", colour = G.C.CLEAR}, nodes={
-                   create_option_cycle({options = page_numbers, current_option = 1, opt_callback = "dv_hist_update_runs_page", dv = callback_args, w = 4.5, colour = G.C.RED, cycle_shoulders = false, no_pips = true})
-               }}
-
-   return create_UIBox_generic_options({
-         back_func = "setup_run",
-         contents = {
-            {n=G.UIT.R, config={align = "cm"}, nodes={
-                {n=G.UIT.O, config={id = "dv_hist_runs", object = runs}}
-            }},
-            nav
-         }
-   })
+   return consumable_area
 end
