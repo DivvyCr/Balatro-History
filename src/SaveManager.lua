@@ -24,7 +24,9 @@ function DV.HIST.execute_save_manager(request)
       -- Autosaves will be named:
       --   SEED_RUNID_autoN
       save_path = DV.HIST.manage_autosaves(request, history_dir, file_name)
-      DV.HIST.prune_autosaves(history_dir)
+      if G.SETTINGS.DV.autosaves_total ~= "Inf." then
+         DV.HIST.prune_autosaves(history_dir)
+      end
    else
       -- Manual saves will be named:
       --   SEED_RUNID_Round-N_saveN
@@ -62,7 +64,7 @@ function DV.HIST.manage_autosaves(request, history_dir, file_name)
    if not love.filesystem.getInfo(autosave_dir) then love.filesystem.createDirectory(autosave_dir) end
 
    local save_path = autosave_dir .. "/" .. file_name .. "_" .. request.save_table.autosave_str
-   local max_autosave_slots = 3
+   local max_autosave_slots = (G.SETTINGS.DV.autosaves_per_run or 3)
    local next_autosave_slot = -1
    for i = 1, max_autosave_slots do
       if not love.filesystem.getInfo(DV.HIST.get_ith_autosave(save_path, i)) then
@@ -100,7 +102,7 @@ function DV.HIST.prune_autosaves(history_dir)
          return love.filesystem.getInfo(f1).modtime < love.filesystem.getInfo(f2).modtime
       end)
       -- Delete oldest:
-      for i = 1, (#all_autosaves - 9) do
+      for i = 1, (#all_autosaves - G.SETTINGS.DV.autosaves_total + 1) do
          love.filesystem.remove(autosave_dir .."/".. all_autosaves[i])
       end
    end
