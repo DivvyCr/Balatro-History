@@ -3,51 +3,19 @@
 -- All UI elements related to the display (and access) of stored runs.
 
 function G.UIDEF.stored_runs()
-   -- TODO: Clean-up this function.
-
-   -- TODO: Ensure directories exist?
-   local history_dir = (G.SETTINGS.profile or 1) .. "/DVHistory"
-   local autosave_dir = history_dir .."/autosaves"
-   local run_paths = love.filesystem.getDirectoryItems(autosave_dir)
-   for i, file in ipairs(run_paths ) do
-      run_paths [i] = "autosaves/" .. run_paths [i]
-   end
-
-   -- Only collect files from `history_dir`:
-   for _, file in ipairs(love.filesystem.getDirectoryItems(history_dir)) do
-      if love.filesystem.isFile(history_dir .."/".. file) then
-         table.insert(run_paths , file)
-      end
-   end
-
-   table.sort(run_paths , function(f1, f2)
-                 f1 = history_dir .."/".. f1
-                 f2 = history_dir .."/".. f2
-                 -- Newest first:
-                 return love.filesystem.getInfo(f1).modtime > love.filesystem.getInfo(f2).modtime
-   end)
+   local run_paths = DV.HIST.get_stored_run_paths()
 
    local page_numbers = {}
    local runs_per_page = 8
-   local total_pages = math.ceil(#run_paths /runs_per_page)
+   local total_pages = math.ceil(#run_paths/runs_per_page)
    for i = 1, total_pages do
       table.insert(page_numbers, localize("k_page").." "..i.."/"..total_pages)
    end
 
    local runs = UIBox({
-      definition = DV.HIST.get_stored_runs_page({run_paths = run_paths , runs_per_page = runs_per_page, page_num = 1}),
+      definition = DV.HIST.get_stored_runs_page({run_paths = run_paths, runs_per_page = runs_per_page, page_num = 1}),
       config = {type = "cm"}
    })
-
-   local callback_args = {
-      ui = runs,
-      rpp = runs_per_page,
-      rds = run_paths ,
-   }
-
-   local nav = {n=G.UIT.R, config={align = "cm", colour = G.C.CLEAR}, nodes={
-                   create_option_cycle({options = page_numbers, current_option = 1, opt_callback = "dv_hist_update_runs_page", dv = callback_args, w = 4.5, colour = G.C.RED, cycle_shoulders = false, no_pips = true})
-               }}
 
    return create_UIBox_generic_options({
          back_func = "setup_run",
@@ -55,9 +23,48 @@ function G.UIDEF.stored_runs()
             {n=G.UIT.R, config={align = "cm"}, nodes={
                 {n=G.UIT.O, config={id = "dv_hist_runs", object = runs}}
             }},
-            nav
+            {n=G.UIT.R, config={align = "cm", colour = G.C.CLEAR}, nodes={
+                create_option_cycle({
+                      options = page_numbers,
+                      current_option = 1,
+                      opt_callback = "dv_hist_update_runs_page",
+                      opt_args = {ui = runs, rpp = runs_per_page, rps = run_paths},
+                      w = 4.5, colour = G.C.RED, cycle_shoulders = false, no_pips = true})
+            }}
          }
    })
+end
+
+function DV.HIST.get_stored_run_paths()
+   local profile = (G.SETTINGS.profile or 1)
+   if not love.filesystem.getInfo(profile) then love.filesystem.createDirectory(profile) end
+
+   local history_dir = (G.SETTINGS.profile or 1) .."/".. DV.HIST.PATHS.STORAGE
+   if not love.filesystem.getInfo(history_dir) then love.filesystem.createDirectory(history_dir) end
+
+   local autosave_dir = history_dir .."/".. DV.HIST.PATHS.AUTOSAVES
+   if not love.filesystem.getInfo(autosave_dir) then love.filesystem.createDirectory(autosave_dir) end
+
+   local run_paths = love.filesystem.getDirectoryItems(autosave_dir)
+   for i, _ in ipairs(run_paths) do
+      run_paths[i] = DV.HIST.PATHS.AUTOSAVES .."/".. run_paths[i]
+   end
+
+   -- Only collect files (not directories!) from `history_dir`:
+   for _, file in ipairs(love.filesystem.getDirectoryItems(history_dir)) do
+      if love.filesystem.isFile(history_dir .."/".. file) then
+         table.insert(run_paths, file)
+      end
+   end
+
+   table.sort(run_paths, function(f1, f2)
+                 f1 = history_dir .."/".. f1
+                 f2 = history_dir .."/".. f2
+                 -- Newest first:
+                 return love.filesystem.getInfo(f1).modtime > love.filesystem.getInfo(f2).modtime
+   end)
+
+   return run_paths
 end
 
 function DV.HIST.get_stored_runs_page(args)
@@ -83,8 +90,9 @@ end
 
 function DV.HIST.get_stored_run_node(run_path, run_data)
    local run_name = run_path
-   if string.sub(run_path, 1, 10) == "autosaves/" then
-      run_name = string.sub(run_path, 11)
+   local autosaves_dir_str = (DV.HIST.PATHS.AUTOSAVES.."/")
+   if string.sub(run_path, 1, #autosaves_dir_str) == autosaves_dir_str then
+      run_name = string.sub(run_path, #autosaves_dir_str+1)
    end
 
    local tooltip = {dv=true, filler={func = DV.HIST.get_run_overlay, args = run_data}}
@@ -118,6 +126,7 @@ function DV.HIST.get_run_overlay(run)
            }},
 
           -- Main info:
+          {n=G.UIT.R, config={minh = 0.05}, nodes={}},
           {n=G.UIT.R, config={align = "cm"}, nodes={
               {n=G.UIT.C, config={align = "cm"}, nodes={
                   {n=G.UIT.O, config={object = DV.HIST.get_run_summary_deck(run)}}

@@ -50,6 +50,16 @@ function G.UIDEF.run_setup_option(type)
    return ui
 end
 
+DV.HIST._create_UIBox_options = create_UIBox_options
+function create_UIBox_options()
+   local ui = DV.HIST._create_UIBox_options()
+   if G.STAGE == G.STAGES.RUN then
+      local store_run_button = UIBox_button({ button = "dv_hist_store_run", label = { "Save Run" }, minw = 5 })
+      table.insert(ui.nodes[1].nodes[1].nodes[1].nodes, 5, store_run_button)
+   end
+   return ui
+end
+
 --
 -- CUSTOM CARDAREA:
 --

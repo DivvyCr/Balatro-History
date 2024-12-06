@@ -5,27 +5,60 @@
 if not DV then DV = {} end
 if not DV.HIST then DV.HIST = {} end
 
+-- CAUTION: The following is duplicated in `/Init.lua`
+DV.HIST.PATHS = {
+   STORAGE = "DVHistory",
+   AUTOSAVES = "_autosaves",
+}
+
 function DV.HIST.execute_save_manager(request)
    local profile = tostring(request.profile_num or 1)
    if not love.filesystem.getInfo(profile) then love.filesystem.createDirectory(profile) end
 
-   local history_dir = profile .. "/DVHistory"
+   local history_dir = profile .. "/".. DV.HIST.PATHS.STORAGE
    if not love.filesystem.getInfo(history_dir) then love.filesystem.createDirectory(history_dir) end
 
    local save_path
    local file_name = DV.HIST.get_run_name(request.save_table)
    if request.save_table.autosave_str then
+      -- Autosaves will be named:
+      --   SEED_RUNID_autoN
       save_path = DV.HIST.manage_autosaves(request, history_dir, file_name)
       DV.HIST.prune_autosaves(history_dir)
    else
-      save_path = history_dir .."/".. file_name .. ".jkr"
+      -- Manual saves will be named:
+      --   SEED_RUNID_Round-N_saveN
+      save_path = DV.HIST.manage_save(request, history_dir, file_name)
    end
 
    compress_and_save(save_path, request.save_table)
 end
 
+function DV.HIST.manage_save(request, history_dir, file_name)
+   file_name = file_name .. "_Round-" .. request.save_table.GAME.round
+   file_name = file_name .. "_save"
+
+   local file_path = history_dir .. "/" .. file_name
+   local length_without_num = #file_path
+
+   -- Find the next free save number, and use it for `save_path`:
+   local save_path = nil
+   local next_num = 1
+   while true do
+      file_path = history_dir .. "/" .. file_name .. next_num
+      if love.filesystem.getInfo(file_path .. ".jkr") then
+         next_num = 1 + tonumber(string.sub(file_path, length_without_num + 1))
+      else
+         save_path = file_path .. ".jkr"
+         break
+      end
+   end
+
+   return save_path
+end
+
 function DV.HIST.manage_autosaves(request, history_dir, file_name)
-   local autosave_dir = history_dir .. "/autosaves"
+   local autosave_dir = history_dir .."/".. DV.HIST.PATHS.AUTOSAVES
    if not love.filesystem.getInfo(autosave_dir) then love.filesystem.createDirectory(autosave_dir) end
 
    local save_path = autosave_dir .. "/" .. file_name .. "_" .. request.save_table.autosave_str
@@ -55,7 +88,7 @@ function DV.HIST.manage_autosaves(request, history_dir, file_name)
 end
 
 function DV.HIST.prune_autosaves(history_dir)
-   local autosave_dir = history_dir .. "/autosaves"
+   local autosave_dir = history_dir .."/".. DV.HIST.PATHS.AUTOSAVES
    if not love.filesystem.getInfo(autosave_dir) then love.filesystem.createDirectory(autosave_dir) end
 
    local all_autosaves = love.filesystem.getDirectoryItems(autosave_dir)
