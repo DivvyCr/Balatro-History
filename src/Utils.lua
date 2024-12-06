@@ -69,6 +69,41 @@ function G.FUNCS.select_blind(e)
    DV.HIST._select_blind(e)
 end
 
+function DV.HIST.get_next_blind_key(run_data)
+   local all_blind_states = run_data.GAME.round_resets.blind_states
+   local next_blind_type = nil
+   if all_blind_states["Small"] == "Select" or all_blind_states["Small"] == "Upcoming" then
+      next_blind_type = "Small"
+   elseif all_blind_states["Big"] == "Select" or all_blind_states["Big"] == "Upcoming" then
+      next_blind_type = "Big"
+   else
+      next_blind_type = "Boss"
+   end
+   local next_blind_key = run_data.GAME.round_resets.blind_choices[next_blind_type]
+   return next_blind_key
+end
+
+function DV.HIST.get_blind_description(run_data, blind_key)
+   local blind = G.P_BLINDS[blind_key]
+   local blind_desc_vars = blind.vars
+   if blind.name == "The Ox" then
+      blind_desc_vars = {localize(run_data.GAME.current_round.most_played_poker_hand, "poker_hands")}
+   end
+   return localize({
+         type = "raw_descriptions",
+         set = "Blind",
+         key = blind_key,
+         vars = blind_desc_vars
+   })
+end
+
+function DV.HIST.get_blind_chips(run_data, blind_key)
+   local blind = G.P_BLINDS[blind_key]
+   local chips = (blind.mult * run_data.GAME.starting_params.ante_scaling
+                  * get_blind_amount(run_data.GAME.round_resets.ante))
+   return chips
+end
+
 function DV.HIST.format_number(num, switch_point)
    if not num or type(num) ~= 'number' then return num or '' end
    -- Start using e-notation earlier to reduce number length:
@@ -78,4 +113,15 @@ function DV.HIST.format_number(num, switch_point)
       return string.format("%.2f",x/(10^fac))..'e'..fac
    end
    return number_format(num) -- Default Balatro function.
+end
+
+function DV.HIST.simple_uuid()
+   math.randomseed(os.time())
+   local ret = ""
+   local len = 12
+   for i = 1, len do
+      ret = ret .. string.format("%x", math.random(0, 0xf))
+      if i % 4 == 0 and i < len then ret = ret .. "-" end
+   end
+   return ret
 end
