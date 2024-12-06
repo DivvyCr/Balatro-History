@@ -9,7 +9,7 @@ DV.HIST = {
    history = {},
    view = {
       abs_round = 1,
-      text = {" ", " ", " ", " "}
+      text = {" ", " ", " ", " "},
    },
    latest = {
      rel_round = 0,
@@ -20,7 +20,12 @@ DV.HIST = {
       SKIP = 0,
       HAND = 1,
       DISCARD = 2,
-      SHOP = 3
+      SHOP = 3,
+   },
+   -- CAUTION: The following is duplicated in `/SaveManager.lua`
+   PATHS = {
+      STORAGE = "DVHistory",
+      AUTOSAVES = "_autosaves",
    }
 }
 

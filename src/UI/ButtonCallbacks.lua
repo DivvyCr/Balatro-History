@@ -99,14 +99,14 @@ end
 
 function G.FUNCS.dv_hist_update_runs_page(args)
    if not args or not args.cycle_config then return end
-   local callback_args = args.cycle_config.dv
+   local callback_args = args.cycle_config.opt_args
 
    local runs_object = callback_args.ui
    local runs_wrap = runs_object.parent
 
    runs_wrap.config.object:remove()
    runs_wrap.config.object = UIBox({
-         definition = DV.HIST.get_stored_runs_page({run_paths = callback_args.rds, runs_per_page = callback_args.rpp, page_num = args.to_key}),
+         definition = DV.HIST.get_stored_runs_page({run_paths = callback_args.rps, runs_per_page = callback_args.rpp, page_num = args.to_key}),
          config = {parent = runs_wrap, type = "cm"}
    })
    runs_wrap.UIBox:recalculate()
@@ -118,6 +118,18 @@ function G.FUNCS.dv_hist_load_run(e)
    G.SAVED_GAME = e.config.ref_table.run_data
 
    G.FUNCS.setup_run(e)
+end
+
+function G.FUNCS.dv_hist_store_run(e)
+   if not e then return end
+   G.E_MANAGER:add_event(Event({
+      trigger = "after",
+      func = function()
+         DV.HIST.store_run()
+         return true
+      end
+   }))
+   G.FUNCS.exit_overlay_menu()
 end
 
 -- Enable 'Continue' option, even when the default 'save.jkr' file is missing:
