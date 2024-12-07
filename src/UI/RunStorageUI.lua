@@ -7,7 +7,7 @@ function G.UIDEF.stored_runs()
 
    local page_numbers = {}
    local runs_per_page = 8
-   local total_pages = math.ceil(#run_paths/runs_per_page)
+   local total_pages = math.max(1, math.ceil(#run_paths/runs_per_page))
    for i = 1, total_pages do
       table.insert(page_numbers, localize("k_page").." "..i.."/"..total_pages)
    end
@@ -82,9 +82,16 @@ function DV.HIST.get_stored_runs_page(args)
       table.insert(run_nodes, DV.HIST.get_stored_run_node(run_paths[next_idx], run_data))
    end
 
+   local content = nil
+   if #run_paths == 0 then
+      content = {n=G.UIT.T, config={text = "No Saved Runs, Yet", colour = G.C.UI.TEXT_LIGHT, scale = 0.5}}
+   else
+      content = {n=G.UIT.R, config={align = "cm", padding = 0.05, r = 0.1}, nodes=run_nodes}
+   end
+
    return
-      {n=G.UIT.ROOT, config={align = "tm", minh = 6, r = 0.1, colour = G.C.CLEAR}, nodes={
-          {n=G.UIT.R, config={align = "cm", padding = 0.05, r = 0.1}, nodes=run_nodes}
+      {n=G.UIT.ROOT, config={align = (#run_paths == 0 and "cm" or "tm"), minw = 10, minh = 6, r = 0.1, colour = G.C.CLEAR}, nodes={
+          content
       }}
 end
 
@@ -99,7 +106,7 @@ function DV.HIST.get_stored_run_node(run_path, run_data)
 
    return
       {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
-          {n=G.UIT.R, config={button = "dv_hist_load_run", ref_table = {run_path = run_path, run_data = run_data}, align = "cl", minw = 10, colour = G.C.RED, padding = 0.1, r = 0.1, on_demand_tooltip = tooltip, hover = true, shadow = true}, nodes={
+          {n=G.UIT.R, config={button = "dv_hist_load_run", ref_table = {run_path = run_path, run_data = run_data}, align = "cl", colour = G.C.RED, minw = 9.6, padding = 0.1, r = 0.1, on_demand_tooltip = tooltip, hover = true, shadow = true}, nodes={
               {n=G.UIT.T, config={text = run_name, colour=G.C.UI.TEXT_LIGHT, scale = 0.45}}
           }}
       }}
