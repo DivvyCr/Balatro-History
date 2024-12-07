@@ -45,7 +45,7 @@ function DV.HIST.new_hand(scoring_name, scoring_cards)
    end
 
    local new_entry = {
-      type   = DV.HIST.TYPES.HAND,
+      type   = DV.HIST.RECORD_TYPE.HAND,
       name   = scoring_name,
       cards  = played_cards,
       held   = held_cards,
@@ -68,7 +68,7 @@ function G.FUNCS.discard_cards_from_highlighted(e, hook)
       table.insert(active_jokers, DV.HIST.get_joker_data(joker))
    end
 
-   local new_entry = {type = DV.HIST.TYPES.DISCARD,
+   local new_entry = {type = DV.HIST.RECORD_TYPE.DISCARD,
                       cards = discarded_cards,
                       jokers = active_jokers}
    table.insert(DV.HIST.history[DV.HIST.latest.ante][DV.HIST.latest.rel_round], 1, new_entry)
@@ -83,9 +83,9 @@ end
 function DV.HIST.get_shop_entry()
    local new_entry = nil
    local hist_entry = DV.HIST.history[DV.HIST.latest.ante][DV.HIST.latest.rel_round]
-   if hist_entry[1].type ~= DV.HIST.TYPES.SHOP then
+   if hist_entry[1].type ~= DV.HIST.RECORD_TYPE.SHOP then
       new_entry = {
-         type        = DV.HIST.TYPES.SHOP,
+         type        = DV.HIST.RECORD_TYPE.SHOP,
          dollars     = 0,
          jokers      = {},
          consumables = {},

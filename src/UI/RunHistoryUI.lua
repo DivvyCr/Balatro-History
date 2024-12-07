@@ -71,7 +71,7 @@ function DV.HIST.get_content_alignment(ante_num, rel_round_num)
    then return "cm" end
 
    local data = DV.HIST.history[ante_num][rel_round_num]
-   if #data == 0 or data[1].type == DV.HIST.TYPES.SKIP then
+   if #data == 0 or data[1].type == DV.HIST.RECORD_TYPE.SKIP then
       -- Align info text to center
       return "cm"
    else
@@ -137,7 +137,7 @@ function DV.HIST.get_content(args)
    then return empty end
 
    local data = DV.HIST.history[args.ante_num][args.rel_round_num]
-   if data[1] and data[1].type == DV.HIST.TYPES.SKIP then
+   if data[1] and data[1].type == DV.HIST.RECORD_TYPE.SKIP then
       return DV.HIST.get_tag_node(args)
    else
       return DV.HIST.get_action_nodes(args)
@@ -157,11 +157,11 @@ function DV.HIST.get_action_nodes(args)
    local all_nodes = {}
    local hand_idx = #round_actions
    for _, action in ipairs(round_actions) do
-      if action.type == DV.HIST.TYPES.SHOP then
+      if action.type == DV.HIST.RECORD_TYPE.SHOP then
          table.insert(all_nodes, DV.HIST.get_shop_node(action))
-      elseif action.type == DV.HIST.TYPES.HAND then
+      elseif action.type == DV.HIST.RECORD_TYPE.HAND then
          table.insert(all_nodes, DV.HIST.get_hand_node(hand_idx, action))
-      elseif action.type == DV.HIST.TYPES.DISCARD then
+      elseif action.type == DV.HIST.RECORD_TYPE.DISCARD then
          table.insert(all_nodes, DV.HIST.get_discard_node(hand_idx, action))
       end
       hand_idx = hand_idx - 1
