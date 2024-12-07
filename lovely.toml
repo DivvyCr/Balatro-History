@@ -1,7 +1,7 @@
 [manifest]
 version = "1.0"
 dump_lua = true
-priority = 10
+priority = 5
 
 # This manifest assumes the following release structure:
 #
@@ -57,15 +57,6 @@ position = "before"
 match_indent = true
 overwrite = false
 payload = "DV.HIST.queue_save_manager()"
-
-[[patches]]
-[patches.pattern]
-target = "functions/UI_definitions.lua"
-pattern = "local t = create_UIBox_generic_options({back_func = 'options',contents = {create_tabs("
-position = "before"
-match_indent = true
-overwrite = false
-payload = "tabs[#tabs+1] = DV.HIST.create_settings_tab(#tabs)"
 
 # Below are extensions to engine/save_manager.lua;
 # special considerations are needed, because the save manager runs on a thread.

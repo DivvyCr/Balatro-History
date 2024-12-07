@@ -31,6 +31,7 @@ function DV.HIST.store_run(autosave_type)
    G.ARGS.store_run = recursive_table_cull({
       autosave_str = autosave_type,
       date_str = os.date("%H:%M, %d %b %Y"),
+      dv_settings = G.SETTINGS.DV,
       cardAreas = card_areas,
       tags = tags,
       GAME = G.GAME,

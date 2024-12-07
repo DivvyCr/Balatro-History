@@ -64,73 +64,53 @@ end
 -- SETTINGS:
 -- 
 
-function DV.HIST.create_settings_tab(num_tabs)
-   -- All my mods may use this settings tab, so they must all create it;
-   -- however, to avoid duplicate tabs, we check that they currently
-   -- contain only the four vanilla tabs:
-   if num_tabs > 4 then return nil end
+function DV.get_history_settings_page()
+   -- TODO: Add infinite option to autosaves per run?
+   local aspr_options = {1, 2, 3, 5, 10, 15, 20, 50}
+   local ast_options = {3, 5, 10, 15, 20, 50, 100, "Inf."}
 
-   return {
-      label = "Other",
-      tab_definition_function = G.UIDEF.dv_settings,
-   }
-end
-
-if not G.UIDEF.dv_settings then
-   -- TODO: Introduce optional pagination for my other mod settings
-   -- Store options in G.SETTINGS.DV.options (each mod will append its own name),
-   -- and use create_UIBox_generic_options() conditioned on option name in callback
-
-   function G.UIDEF.dv_settings()
-      local aspr_options = {1, 2, 3, 5, 10, 15, 20, 50}
-      local ast_options = {3, 5, 10, 15, 20, 50, 100, "Inf."}
-
-      local function option_val2idx(options, val, default)
-         for i, v in ipairs(options) do
-            if v == val then return i end
-         end
-         return default
+   local function option_val2idx(options, val, default)
+      for i, v in ipairs(options) do
+         if v == val then return i end
       end
-
-      return
-         {n=G.UIT.ROOT, config={align = "cm", padding = 0.05, colour = G.C.CLEAR}, nodes={
-             create_toggle({
-                   ref_table = G.SETTINGS.DV,
-                   ref_value = "autosave",
-                   label = "Enable Autosaves",
-                   info = {
-                      "For each run, the game will automatically save a run file at the end of each round.",
-                      "You can load them through the run setup menu."
-                   },
-             }),
-             {n=G.UIT.R, config={minh = 0.3}, nodes={}},
-             create_option_cycle({
-                   opt_callback = "dv_hist_set_run_autosaves",
-                   label = "Maximum Autosaves (per Run)",
-                   options = aspr_options,
-                   -- `current_option` is an index of `options`
-                   current_option = option_val2idx(aspr_options, G.SETTINGS.DV.autosaves_per_run, 4),
-                   scale = 0.8,
-                   info = {
-                      "The game will only keep this number of the most recent autosaves for each run.",
-                      "(This option prevents one long run from filling-up your autosaves folder)"
-                   }
-             }),
-             {n=G.UIT.R, config={minh = 0.3}, nodes={}},
-             create_option_cycle({
-                   opt_callback = "dv_hist_set_total_autosaves",
-                   label = "Maximum Autosaves (Total)",
-                   options = ast_options,
-                   -- `current_option` is an index of `options`
-                   current_option = option_val2idx(ast_options, G.SETTINGS.DV.autosaves_total, 3),
-                   scale = 0.8,
-                   info = {
-                      "The maximum number of autosaves that can be stored on your computer.",
-                      "When there are more than that, the oldest autosaves are deleted first."
-                   }
-             }),
-         }}
+      return default
    end
+
+   return
+      {n=G.UIT.ROOT, config={align = "cm", padding = 0.05, colour = G.C.CLEAR}, nodes={
+          create_toggle({
+                ref_table = G.SETTINGS.DV,
+                ref_value = "autosave",
+                label = "Enable Autosaves",
+          }),
+          {n=G.UIT.R, config={minh = 0.3}, nodes={}},
+          create_option_cycle({
+                opt_callback = "dv_hist_set_run_autosaves",
+                label = "Maximum Autosaves (per Run)",
+                options = aspr_options,
+                -- `current_option` is an index of `options`
+                current_option = option_val2idx(aspr_options, G.SETTINGS.DV.autosaves_per_run, 4),
+                scale = 0.8,
+                info = {
+                   "The game will only keep this number of the most recent autosaves for each run.",
+                   "(This option prevents one long run from filling-up your autosaves folder)"
+                }
+          }),
+          { n = G.UIT.R, config = { minh = 0.3 }, nodes = {} },
+          create_option_cycle({
+                opt_callback = "dv_hist_set_total_autosaves",
+                label = "Maximum Autosaves (Total)",
+                options = ast_options,
+                -- `current_option` is an index of `options`
+                current_option = option_val2idx(ast_options, G.SETTINGS.DV.autosaves_total, 3),
+                scale = 0.8,
+                info = {
+                   "The maximum number of autosaves that can be stored on your computer.",
+                   "When there are more than that, the oldest autosaves are deleted first."
+                }
+          }),
+      }
+   }
 end
 
 --
