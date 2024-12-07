@@ -3,8 +3,9 @@
 -- The core logic of storing runs for later loading from file.
 
 -- The following is a customised version of functions/misc_functions.lua#save_run()
-function DV.HIST.store_run(autosave_type)
-   if autosave_type and not G.SETTINGS.DV.autosave then return end
+function DV.HIST.store_run(store_type)
+   -- Do nothing if this is an autosave and autosaves are disabled:
+   if store_type == DV.HIST.STORAGE_TYPE.AUTO and not G.SETTINGS.DV.autosave then return end
 
    local card_areas = {}
    for k, v in pairs(G) do
@@ -29,9 +30,8 @@ function DV.HIST.store_run(autosave_type)
    }
 
    G.ARGS.store_run = recursive_table_cull({
-      autosave_str = autosave_type,
+      type_str = store_type,
       date_str = os.date("%H:%M, %d %b %Y"),
-      dv_settings = G.SETTINGS.DV,
       cardAreas = card_areas,
       tags = tags,
       GAME = G.GAME,
@@ -55,7 +55,10 @@ function DV.HIST.queue_save_manager()
       G.SAVE_MANAGER.channel:push({
          type = "store_run",
          save_table = G.ARGS.store_run,
-         profile_num = G.SETTINGS.profile
+         profile_num = G.SETTINGS.profile,
+         dv_settings = G.SETTINGS.DV,
+         dv_paths = DV.HIST.PATHS,
+         dv_types = DV.HIST.STORAGE_TYPE
       })
    end
 
@@ -66,6 +69,7 @@ end
 -- AUTO-SAVING:
 --
 
+-- Autosave after round end, just when entering shop:
 DV.HIST._update_shop = Game.update_shop
 function Game:update_shop(dt)
    DV.HIST._update_shop(self, dt)
@@ -80,7 +84,7 @@ function Game:update_shop(dt)
                -- Hence, this event is queued after all shop events are queued:
                trigger = "after",
                func = function()
-                  DV.HIST.store_run("auto")
+                  DV.HIST.store_run(DV.HIST.STORAGE_TYPE.AUTO)
                   return true
                end
             }))
@@ -91,8 +95,51 @@ function Game:update_shop(dt)
    end
 end
 
+-- ENABLE AUTOSAVING ONLY AFTER ROUND END:
+-- (this avoids autosaving at awkward times)
+
 DV.HIST._end_round = end_round
 function end_round()
    DV.HIST.autosave = true
+
+   -- Must manually check for game win/loss, in order to
+   -- store run BEFORE the win/loss screen (so that it re-appears on run load):
+   local game_over_status = DV.HIST.is_game_over()
+   if game_over_status then
+      G.E_MANAGER:add_event(Event({
+         trigger = "after",
+         func = function()
+            DV.HIST.store_run(game_over_status)
+            return true
+         end
+      }))
+      DV.HIST.autosave = false
+   end
+
    DV.HIST._end_round()
+end
+
+function DV.HIST.is_game_over()
+   local round_beat = false
+   if G.GAME.chips - G.GAME.blind.chips >= 0 then
+      round_beat = true
+   else
+      -- Check for any saving graces:
+      -- TODO: Need a more generic way that doesn't have side-effects (for other mod effects)
+      for _, joker_obj in ipairs(G.jokers.cards) do
+         if joker_obj.ability.name == "Mr. Bones" and G.GAME.chips/G.GAME.blind.chips >= 0.25 then
+            round_beat = true
+         end
+      end
+   end
+
+   if round_beat then
+      if G.GAME.round_resets.ante == G.GAME.win_ante and G.GAME.blind:get_type() == 'Boss' then
+         return DV.HIST.STORAGE_TYPE.WIN
+      else
+         return nil
+      end
+   else
+      return DV.HIST.STORAGE_TYPE.LOSS
+   end
 end

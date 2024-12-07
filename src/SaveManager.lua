@@ -5,17 +5,11 @@
 if not DV then DV = {} end
 if not DV.HIST then DV.HIST = {} end
 
--- CAUTION: The following is duplicated in `/Init.lua`
-DV.HIST.PATHS = {
-   STORAGE = "DVHistory",
-   AUTOSAVES = "_autosaves",
-}
-
 function DV.HIST.execute_save_manager(request)
    local profile = tostring(request.profile_num or 1)
    if not love.filesystem.getInfo(profile) then love.filesystem.createDirectory(profile) end
 
-   local history_dir = profile .. "/".. DV.HIST.PATHS.STORAGE
+   local history_dir = profile .. "/".. request.dv_paths.STORAGE
    if not love.filesystem.getInfo(history_dir) then love.filesystem.createDirectory(history_dir) end
 
    local save_path
@@ -25,16 +19,19 @@ function DV.HIST.execute_save_manager(request)
       file_name = file_name .."_Chal"
    end
 
-   if request.save_table.autosave_str then
+   if request.save_table.type_str == request.dv_types.AUTO then
       -- Autosaves will be named:
-      --   SEED_RUNID_autoN
+      --   [SEED]_[RUNID]_auto[N]
       save_path = DV.HIST.manage_autosaves(request, history_dir, file_name)
-      if request.save_table.dv_settings.autosaves_total ~= "Inf." then
+
+      -- Prune autosaves as long as the total autosaves setting is not infinity:
+      if request.dv_settings.autosaves_total ~= "Inf." then
          DV.HIST.prune_autosaves(request, history_dir)
       end
    else
-      -- Manual saves will be named:
-      --   SEED_RUNID_Round-N_saveN
+      -- All other saves will only differ by name:
+      --   [SEED]_[RUNID]_Round-[N]_save[N]    Manual saves
+      --   [SEED]_[RUNID]_[TYPE][N]            Other saves
       save_path = DV.HIST.manage_save(request, history_dir, file_name)
    end
 
@@ -42,8 +39,10 @@ function DV.HIST.execute_save_manager(request)
 end
 
 function DV.HIST.manage_save(request, history_dir, file_name)
-   file_name = file_name .. "_Round-" .. request.save_table.GAME.round
-   file_name = file_name .. "_save"
+   if request.save_table.type_str == request.dv_types.MANUAL then
+      file_name = file_name .. "_Round-" .. request.save_table.GAME.round
+   end
+   file_name = file_name .."_".. request.save_table.type_str
 
    local file_path = history_dir .. "/" .. file_name
    local length_without_num = #file_path
@@ -65,11 +64,11 @@ function DV.HIST.manage_save(request, history_dir, file_name)
 end
 
 function DV.HIST.manage_autosaves(request, history_dir, file_name)
-   local autosave_dir = history_dir .."/".. DV.HIST.PATHS.AUTOSAVES
+   local autosave_dir = history_dir .."/".. request.dv_paths.AUTOSAVES
    if not love.filesystem.getInfo(autosave_dir) then love.filesystem.createDirectory(autosave_dir) end
 
-   local save_path = autosave_dir .. "/" .. file_name .. "_" .. request.save_table.autosave_str
-   local max_autosave_slots = (request.save_table.dv_settings.autosaves_per_run or 3)
+   local save_path = autosave_dir .. "/" .. file_name .. "_auto"
+   local max_autosave_slots = (request.dv_settings.autosaves_per_run or 3)
    local next_autosave_slot = -1
    for i = 1, max_autosave_slots do
       if not love.filesystem.getInfo(DV.HIST.get_ith_autosave(save_path, i)) then
@@ -95,7 +94,7 @@ function DV.HIST.manage_autosaves(request, history_dir, file_name)
 end
 
 function DV.HIST.prune_autosaves(request, history_dir)
-   local autosave_dir = history_dir .."/".. DV.HIST.PATHS.AUTOSAVES
+   local autosave_dir = history_dir .."/".. request.dv_paths.AUTOSAVES
    if not love.filesystem.getInfo(autosave_dir) then love.filesystem.createDirectory(autosave_dir) end
 
    local all_autosaves = love.filesystem.getDirectoryItems(autosave_dir)
@@ -107,7 +106,7 @@ function DV.HIST.prune_autosaves(request, history_dir)
          return love.filesystem.getInfo(f1).modtime < love.filesystem.getInfo(f2).modtime
       end)
       -- Delete oldest:
-      for i = 1, (#all_autosaves - request.save_table.dv_settings.autosaves_total + 1) do
+      for i = 1, (#all_autosaves - request.dv_settings.autosaves_total + 1) do
          love.filesystem.remove(autosave_dir .."/".. all_autosaves[i])
       end
    end

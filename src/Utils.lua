@@ -58,7 +58,7 @@ DV.HIST._skip_blind = G.FUNCS.skip_blind
 function G.FUNCS.skip_blind(e)
    DV.HIST.inc_round()
    local tag_data = e.UIBox:get_UIE_by_ID("tag_container").config.ref_table
-   local new_entry = {type = DV.HIST.TYPES.SKIP, tag_id = tag_data.key}
+   local new_entry = {type = DV.HIST.RECORD_TYPE.SKIP, tag_id = tag_data.key}
    table.insert(DV.HIST.history[DV.HIST.latest.ante][DV.HIST.latest.rel_round], 1, new_entry)
    DV.HIST._skip_blind(e)
 end

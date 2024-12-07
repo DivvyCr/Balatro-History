@@ -16,17 +16,22 @@ DV.HIST = {
      abs_round = 0,
      ante = 0,
    },
-   TYPES = {
+   RECORD_TYPE = {
       SKIP = 0,
       HAND = 1,
       DISCARD = 2,
       SHOP = 3,
    },
-   -- CAUTION: The following is duplicated in `/SaveManager.lua`
+   STORAGE_TYPE = {
+      AUTO = "auto",
+      MANUAL = "save",
+      WIN = "win",
+      LOSS = "loss",
+   },
    PATHS = {
       STORAGE = "DVHistory",
       AUTOSAVES = "_autosaves",
-   }
+   },
 }
 
 DV.HIST._start_up = Game.start_up
@@ -39,7 +44,7 @@ function Game:start_up()
    G.SETTINGS.DV.autosaves_total = 10
 
    if not DV.settings then error("Divvy's History requires Divvy's Setting tools; re-install Divvy's History mod and double-check that there is a 'DVSettings' folder") end
-   G.DV.options["Run History"] = "get_history_settings_page"
+   G.DV.options["Autosaves"] = "get_history_settings_page"
 end
 
 DV.HIST._start_run = Game.start_run
