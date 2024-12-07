@@ -37,6 +37,9 @@ function Game:start_up()
    G.SETTINGS.DV.autosave = true
    G.SETTINGS.DV.autosaves_per_run = 5
    G.SETTINGS.DV.autosaves_total = 10
+
+   if not DV.settings then error("Divvy's History requires Divvy's Setting tools; re-install Divvy's History mod and double-check that there is a 'DVSettings' folder") end
+   G.DV.options["Run History"] = "get_history_settings_page"
 end
 
 DV.HIST._start_run = Game.start_run

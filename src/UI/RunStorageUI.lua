@@ -99,7 +99,7 @@ function DV.HIST.get_stored_run_node(run_path, run_data)
 
    return
       {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
-          {n=G.UIT.R, config={button = "dv_hist_load_run", ref_table = {run_path = run_path, run_data = run_data}, align = "cl", minw = 8, colour = G.C.RED, padding = 0.1, r = 0.1, on_demand_tooltip = tooltip, hover = true, shadow = true}, nodes={
+          {n=G.UIT.R, config={button = "dv_hist_load_run", ref_table = {run_path = run_path, run_data = run_data}, align = "cl", minw = 10, colour = G.C.RED, padding = 0.1, r = 0.1, on_demand_tooltip = tooltip, hover = true, shadow = true}, nodes={
               {n=G.UIT.T, config={text = run_name, colour=G.C.UI.TEXT_LIGHT, scale = 0.45}}
           }}
       }}
@@ -124,6 +124,13 @@ function DV.HIST.get_run_overlay(run)
                    {n=G.UIT.T, config={text = (run.date_str or ""), align = "cr", colour = G.C.UI.TEXT_LIGHT, scale = 0.25}}
                }}
            }},
+
+           -- Challenge name centered, if it's a challenge run:
+           (run.GAME.challenge and {n=G.UIT.R, config={minh = 0.05}, nodes={}} or nil),
+           (run.GAME.challenge and
+            {n=G.UIT.R, config={align = "cm"}, nodes={
+                {n=G.UIT.T, config={text = "'"..run.GAME.challenge_tab.name.."' Challenge", align = "cm", colour = G.C.UI.TEXT_LIGHT, scale = scale}}
+            }} or nil),
 
           -- Main info:
           {n=G.UIT.R, config={minh = 0.05}, nodes={}},
