@@ -34,19 +34,18 @@
 
 ## How to Use
 
-<p align="center">
 There is now a new button in the run setup screen, which allows you to select any of your saved runs:
-</p>
+
 <p align="center"><img src="imgs/DVHistory_Img-1.png" width="40%"></p>
 
-<p align="center">
-The game will automatically save the last couple of rounds (by default 5 autosaves are kept per run).
-Below, you can see five autosaves from one run (which has seed 'TFHH6EEY' and unique id '17dc-fcf1'),
+> [!NOTE]
+> The game will automatically save the last couple of rounds, **by default only 5 autosaves are kept per run**.
+
+Below, you can see five autosaves from one run (which has seed `TFHH6EEY` and unique id `17dc-fcf1`),
 with the oldest of those five autosaves being previewed by hovering over it.
-<br>
+
 You can also see a manual save there, which has a longer name including the round number. 
 You can create manual saves from the options menu in the game (see the other image).
-</p>
 
 <p align="center">
 <img src="imgs/DVHistory_Img-2.png" width="40%">
