@@ -125,7 +125,7 @@ function G.FUNCS.dv_hist_store_run(e)
    G.E_MANAGER:add_event(Event({
       trigger = "after",
       func = function()
-         DV.HIST.store_run()
+         DV.HIST.store_run(DV.HIST.STORAGE_TYPE.MANUAL)
          return true
       end
    }))
