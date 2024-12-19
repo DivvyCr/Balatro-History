@@ -66,6 +66,10 @@ payload = "DV.HIST.queue_save_manager()"
 source = "SaveManager.lua"
 before = "engine/save_manager.lua"
 name = "DV"
+load_now = true
+
+# TODO: `load_now` above is a stopgap solution to the lazy module loading introduced in Lovely v0.6.0
+# My hunch is that lazy loading breaks something due to the fact that save manager runs on a thread.
 
 [[patches]]
 [patches.pattern]
