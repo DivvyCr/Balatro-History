@@ -24,24 +24,28 @@ function G.FUNCS.dv_hist_change_view(e)
 
    DV.HIST.view.text[4] = "Ante " .. new_ante
 
-   -- e.UIBox is the button's UIBox; its parent UIBox is the whole history view.
+   -- e.UIBox is the button's UIBox; its parent's UIBox is the whole history view.
    -- The button UIBox is needed to be able to show/hide the buttons at the edge rounds.
+   -- (NOTE: A UIBox is the whole structure under some root node)
    local outer_uibox = e.UIBox.parent.UIBox
-   local hands_view = outer_uibox:get_UIE_by_ID("dv_hist")
+   local actions_ui = outer_uibox:get_UIE_by_ID("dv_hist")
 
-   hands_view.config.object:remove()
-   hands_view.config.object = UIBox({
+   actions_ui.config.object:remove()
+   actions_ui.config.object = UIBox({
       definition = DV.HIST.get_content({ante_num = new_ante, rel_round_num = new_round}),
-      config = {parent = hands_view, type = "cm"}
+      config = {parent = actions_ui, type = "cm"}
    })
 
-   local hands_view_wrap = outer_uibox:get_UIE_by_ID("dv_hist_align")
-   hands_view_wrap.config.align = DV.HIST.get_content_alignment(new_ante, new_round)
+   local actions_ui_wrap = outer_uibox:get_UIE_by_ID("dv_hist_align")
+   actions_ui_wrap.config.align = DV.HIST.get_content_alignment(new_ante, new_round)
 
    DV.HIST.update_pips(outer_uibox, new_ante)
    DV.HIST.update_buttons(outer_uibox)
 
    outer_uibox:recalculate()
+
+   local tab_uibox = outer_uibox.parent.UIBox
+   tab_uibox:recalculate()
 end
 
 function DV.HIST.update_pips(hist_uibox, ante)

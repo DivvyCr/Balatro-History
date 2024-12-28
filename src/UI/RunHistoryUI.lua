@@ -27,13 +27,9 @@ function G.UIDEF.history()
 
    local content_align = DV.HIST.get_content_alignment(DV.HIST.latest.ante, DV.HIST.latest.rel_round)
    return {n=G.UIT.ROOT, config = {align = "cm", minw = 10, padding = 0.2, r = 0.15, colour = G.C.CLEAR}, nodes = {
-      {n=G.UIT.R, config = {id = "dv_hist_align", align = content_align, minh = 6}, nodes = {
+      {n=G.UIT.R, config = {id = "dv_hist_align", align = content_align, minh = 6.5}, nodes = {
          -- Display (usually hands, sometimes skipped tag):
-         {n=G.UIT.C, config = {align = "cm"}, nodes = {
-            {n=G.UIT.R, config = {align = "cm", padding = 0.1}, nodes = {
-               {n=G.UIT.O, config = {id = "dv_hist", object = content}}
-            }},
-         }}
+         {n=G.UIT.O, config = {id = "dv_hist", object = content}}
       }},
       {n=G.UIT.R, config = {align = "cm"}, nodes = {
          -- Navigation:
@@ -155,10 +151,11 @@ function DV.HIST.get_action_nodes(args)
    end
 
    local all_nodes = {}
+   local shop_node = nil
    local hand_idx = #round_actions
    for _, action in ipairs(round_actions) do
       if action.type == DV.HIST.RECORD_TYPE.SHOP then
-         table.insert(all_nodes, DV.HIST.get_shop_node(action))
+         shop_node = DV.HIST.get_shop_node(action)
       elseif action.type == DV.HIST.RECORD_TYPE.HAND then
          table.insert(all_nodes, DV.HIST.get_hand_node(hand_idx, action))
       elseif action.type == DV.HIST.RECORD_TYPE.DISCARD then
@@ -166,8 +163,34 @@ function DV.HIST.get_action_nodes(args)
       end
       hand_idx = hand_idx - 1
    end
-   return {n=G.UIT.ROOT, config = {align = "tm", r = 0.1, colour = G.C.CLEAR}, nodes={
-      {n=G.UIT.R, config={align = "cm", padding = 0.1, r = 0.1}, nodes=all_nodes}
+
+   local action_columns = {}
+   local cur_column = 1
+   local cur_nodes = {}
+   for idx, node in ipairs(all_nodes) do
+      if idx > 8 * cur_column then
+         table.insert(action_columns, {n=G.UIT.C, config={align = "tm", padding = 0.1, r = 0.1}, nodes=cur_nodes})
+         cur_column = cur_column + 1
+         cur_nodes = {}
+      end
+
+      table.insert(cur_nodes, node)
+   end
+   table.insert(action_columns, {n=G.UIT.C, config={align = "tm", padding = 0.1, r = 0.1}, nodes=cur_nodes})
+
+   -- Visual reference:
+   --
+   -- action_columns = {
+   --   {n=G.UIT.C, config={align = "tm", padding = 0.1, r = 0.1}, nodes=..},
+   --   {n=G.UIT.C, config={align = "tm", padding = 0.1, r = 0.1}, nodes=..},
+   --   ...
+   -- }
+
+   return {n=G.UIT.ROOT, config={align = "tm", r = 0.1, colour = G.C.CLEAR}, nodes={
+      {n=G.UIT.R, config={align = "cm"}, nodes={
+         shop_node, -- This is either a node or nil, both of which work.
+         {n=G.UIT.R, config={align = "cm"}, nodes=action_columns}
+      }}
    }}
 end
 
@@ -180,7 +203,7 @@ function DV.HIST.get_hand_node(idx, hand)
       {n=G.UIT.C, config={align = "cl", minw = 3.4, padding = 0.05}, nodes={
          {n=G.UIT.T, config={text = hand.name, colour=G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}}
       }},
-      {n=G.UIT.C, config={align = "cr", minw = 4}, nodes={
+      {n=G.UIT.C, config={align = "cr", minw = 2}, nodes={
          {n=G.UIT.C, config={align = "cm", padding = 0.05, r = 0.1, colour = G.C.BLACK}, nodes={
             {n=G.UIT.B, config={w = 0.05, h = 0.01}, nodes={}},
             {n=G.UIT.O, config={w = 0.3, h = 0.3, object = get_stake_sprite(G.GAME.stake or 1), can_collide = false}},
@@ -196,30 +219,31 @@ function DV.HIST.get_discard_node(idx, hand)
       {n=G.UIT.C, config={align = "cm", minw = 0.8, padding = 0.05, r = 0.1, colour = G.C.L_BLACK}, nodes={
           {n=G.UIT.T, config={text = idx .. ".", colour=lighten(G.C.RED, 0.1), shadow = true, scale = 0.45}},
       }},
-      {n=G.UIT.C, config={align = "cl", minw = 7.4, padding = 0.05}, nodes={
+      {n=G.UIT.C, config={align = "cl", minw = 5.4, padding = 0.05}, nodes={
           {n=G.UIT.T, config={text = "Discard", colour=G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}}
       }}
    }}
 end
 
-function DV.HIST.get_shop_node(shop)
-   local shop_node = {n=G.UIT.R, config={align = "cm", colour = darken(G.C.JOKER_GREY, 0.1), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_shop_overlay, args = shop}}}, nodes={
+function DV.HIST.get_shop_node(shop_data)
+   local shop_node = {n=G.UIT.R, config={align = "cm", colour = darken(G.C.JOKER_GREY, 0.1), emboss = 0.05, hover = true, force_focus = true, padding = 0.05, r = 0.1, on_demand_tooltip = {dv=true, filler={func = DV.HIST.get_shop_overlay, args = shop_data}}}, nodes={
       -- Force left padding to make 'Shop' text centered (accounting for dollars on the right):
-      {n=G.UIT.C, config={align = "cl", minw = 2, padding = 0.05}, nodes={}},
+      {n=G.UIT.C, config={align = "cl", minw = 1.5, padding = 0.05}, nodes={}},
       -- Content:
-      {n=G.UIT.C, config={align = "cm", minw = 2, padding = 0.05}, nodes={
+      {n=G.UIT.C, config={align = "cm", minw = 1.5, padding = 0.05}, nodes={
          {n=G.UIT.T, config={text = "Shop", colour=G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.45}}
       }},
-      {n=G.UIT.C, config={align = "cr", minw = 2}, nodes={
+      {n=G.UIT.C, config={align = "cr", minw = 1.5}, nodes={
          {n=G.UIT.C, config={align = "cm", padding = 0.05, r = 0.1, colour = G.C.BLACK}, nodes={
             {n=G.UIT.B, config={w = 0.05, h = 0.01}, nodes={}},
-            {n=G.UIT.T, config={text = ("-$" .. shop.dollars), colour = G.C.MONEY, shadow = true, scale = 0.45}},
+            {n=G.UIT.T, config={text = ("-$" .. shop_data.dollars), colour = G.C.MONEY, shadow = true, scale = 0.45}},
             {n=G.UIT.B, config={w = 0.1, h = 0.01}, nodes={}},
          }}
       }}
    }}
+
    -- Wrap shop node to make it narrower than hand/discard nodes:
-   return {n=G.UIT.R, config={align = "cm", maxw = 6}, nodes={shop_node}}
+   return {n=G.UIT.R, config={align = "cm", maxw = 4.5}, nodes={shop_node}}
 end
 
 function DV.HIST.get_tag_node(args)
