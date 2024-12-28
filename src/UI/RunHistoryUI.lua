@@ -5,9 +5,9 @@
 function G.UIDEF.history()
    DV.HIST.view.abs_round = DV.HIST.latest.abs_round
    DV.HIST.view.text[4] = "Ante " .. DV.HIST.latest.ante
-   for i = 1, 3 do
-      local abs_round_num = (DV.HIST.latest.ante-1)*3 + i
-      DV.HIST.view.text[i] = "Round " .. abs_round_num
+   for ante_round = 1, 3 do
+      local abs_round_num = (DV.HIST.latest.ante-1)*3 + ante_round
+      DV.HIST.view.text[ante_round] = "Round " .. abs_round_num
    end
 
    local content = UIBox({
