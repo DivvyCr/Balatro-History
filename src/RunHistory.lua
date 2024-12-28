@@ -83,7 +83,9 @@ end
 function DV.HIST.get_shop_entry()
    local new_entry = nil
    local hist_entry = DV.HIST.history[DV.HIST.latest.ante][DV.HIST.latest.rel_round]
-   if hist_entry[1].type ~= DV.HIST.RECORD_TYPE.SHOP then
+   -- NOTE: In base Balatro, it is impossible to reach here without some recorded history,
+   -- but mods like DebugPlus allow to win blind without it, so we need the `not entry` condition:
+   if not hist_entry[1] or hist_entry[1].type ~= DV.HIST.RECORD_TYPE.SHOP then
       new_entry = {
          type        = DV.HIST.RECORD_TYPE.SHOP,
          dollars     = 0,
