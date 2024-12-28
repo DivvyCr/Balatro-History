@@ -2,34 +2,14 @@
 --
 -- Fundamental changes to the game's UI, which allow for extensions.
 
--- Full override:
-function G.UIDEF.run_info()
-   return create_UIBox_generic_options({contents ={create_tabs(
-      {tabs = {
-         {
-            label = localize('b_poker_hands'),
-            tab_definition_function = create_UIBox_current_hands,
-            chosen = true,
-         },
-         {
-            label = localize('b_blinds'),
-            tab_definition_function = G.UIDEF.current_blinds,
-         },
-         {
-            label = localize('b_vouchers'),
-            tab_definition_function = G.UIDEF.used_vouchers,
-         },
-         {
-            label = "History",
-            tab_definition_function = G.UIDEF.history,
-         },
-         G.GAME.stake > 1 and {
-            label = localize('b_stake'),
-            tab_definition_function = G.UIDEF.current_stake,
-         } or nil,
-      },
-       tab_h = 8,
-       snap_to_nav = true})}})
+-- The following function is injected into:
+--   functions/UI_definitions.lua#G.UIDEF.run_info()
+-- see lovely.toml for details.
+function DV.HIST.history_tab()
+   return {
+      label = "History",
+      tab_definition_function = G.UIDEF.history,
+   }
 end
 
 DV.HIST._run_setup_option = G.UIDEF.run_setup_option
