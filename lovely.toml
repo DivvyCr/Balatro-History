@@ -51,6 +51,15 @@ sources = [ "UI/ButtonCallbacks.lua" ]
 
 [[patches]]
 [patches.pattern]
+target = "functions/UI_definitions.lua"
+pattern = "G.GAME.stake > 1 and {"
+position = "before"
+match_indent = true
+overwrite = false
+payload = "DV.HIST.history_tab(),"
+
+[[patches]]
+[patches.pattern]
 target = "game.lua"
 pattern = "G.FILE_HANDLER.force = false"
 position = "before"
