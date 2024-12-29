@@ -39,7 +39,9 @@ function Game:start_up()
    DV.HIST._start_up(self)
 
    if not G.SETTINGS.DV then G.SETTINGS.DV = {} end
-   if not G.SETTINGS.DV.autosave then
+   if not G.SETTINGS.DV.HIST then
+      G.SETTINGS.DV.HIST = true
+
       G.SETTINGS.DV.autosave = true
       G.SETTINGS.DV.autosaves_per_run = 5
       G.SETTINGS.DV.autosaves_total = 10
