@@ -77,8 +77,15 @@ function Game:update_shop(dt)
    if DV.HIST.autosave then
       G.E_MANAGER:add_event(Event({
          -- This event is queued after all shop events;
-         -- however, shop events queue more events, so triggering a save
-         -- in this event will actually run before most shop events!
+         -- however, shop events queue more (nested) events, so triggering
+         -- a save in this event will actually run before most shop events!
+         trigger = "after",
+         -- The delay in only necessary to allow some shop events to take place, such as the Coupon tag
+         -- TODO: Figure out a better way to do this:
+         -- either combine some shop condition with top-level `if` here,
+         -- or trigger run storage at a slightly different time?
+         delay = 1.5,
+         --
          func = function()
             G.E_MANAGER:add_event(Event({
                -- Hence, this event is queued after all shop events are queued:
