@@ -116,6 +116,12 @@ function G.FUNCS.buy_from_shop(e)
       elseif card.ability.set == "Tarot" or card.ability.set == "Planet" or card.ability.set == "Spectral" then
          table.insert(shop_entry.consumables, DV.HIST.get_consumable_data(card))
       elseif card.ability.set == "Default" or card.ability.set == "Enhanced" then
+         -- If player bought the Magic Trick voucher and a playing card
+         -- *in the same shop*, then there would be no `play_cards` field.
+         -- TODO: Consider a better place/way of doing this:
+         if not shop_entry.play_cards and G.GAME.playing_card_rate > 0 then
+            shop_entry.play_cards = {}
+         end
          table.insert(shop_entry.play_cards, DV.HIST.get_card_data(card))
       end
    end
