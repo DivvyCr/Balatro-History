@@ -316,7 +316,7 @@ function DV.HIST.get_run_summary_jokers(run_data)
 
    for _, joker_data in ipairs(run_data.cardAreas.jokers.cards) do
       local c = DV.HIST.create_card(G.P_CARDS.empty, G.P_CENTERS[joker_data.save_fields.center], joker_scale)
-      c:set_edition(joker_data.edition)
+      c:set_edition(joker_data.edition, true, true)
       joker_area:emplace(c)
    end
    return joker_area

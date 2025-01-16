@@ -315,7 +315,7 @@ function DV.HIST.get_cards_area(norm_width, cards)
       local card_obj = DV.HIST.create_card(G.P_CARDS[card.id], G.P_CENTERS[card.type], card_scale)
 
       if card.edition then card_obj:set_edition(card.edition, true, true) end
-      if card.seal then card_obj:set_seal(card.seal, true) end
+      if card.seal then card_obj:set_seal(card.seal, true, true) end
       if not card.scoring then card_obj.greyed = true end
 
       cards_area:emplace(card_obj)
