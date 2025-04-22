@@ -3,34 +3,22 @@ version = "1.0"
 dump_lua = true
 priority = 5
 
-# This manifest assumes the following release structure:
-#
-# DVHistory/
-# ├─ Init.lua
-# ├─ RunHistory.lua
-# ├─ RunStorage.lua
-# ├─ SaveManager.lua
-# ├─ UI/
-# │  ├─ BaseUI.lua
-# │  ├─ RunHistoryUI.lua
-# │  ├─ RunStorageUI.lua
-# │  ├─ ButtonCallbacks.lua
-# ├─ Utils.lua
-
 [[patches]]
 [patches.copy]
 target = "globals.lua"
 position = "append"
-sources = [ "Init.lua" ]
+sources = [
+  "src/Init.lua"
+]
 
 [[patches]]
 [patches.copy]
 target = "main.lua"
 position = "append"
 sources = [
-  "RunHistory.lua",
-  "RunStorage.lua",
-  "Utils.lua"
+  "src/RunHistory.lua",
+  "src/RunStorage.lua",
+  "src/Utils.lua"
 ]
 
 [[patches]]
@@ -38,16 +26,18 @@ sources = [
 target = "functions/UI_definitions.lua"
 position = "append"
 sources = [
-  "UI/BaseUI.lua",
-  "UI/RunHistoryUI.lua",
-  "UI/RunStorageUI.lua"
+  "src/UI/BaseUI.lua",
+  "src/UI/RunHistoryUI.lua",
+  "src/UI/RunStorageUI.lua"
 ]
 
 [[patches]]
 [patches.copy]
 target = "functions/button_callbacks.lua"
 position = "append"
-sources = [ "UI/ButtonCallbacks.lua" ]
+sources = [
+  "src/UI/ButtonCallbacks.lua"
+]
 
 [[patches]]
 [patches.pattern]
@@ -73,7 +63,7 @@ payload = "DV.HIST.queue_save_manager()"
 [[patches]]
 [patches.module]
 source = "SaveManager.lua"
-before = "engine/save_manager.lua"
+before = "src/engine/save_manager.lua"
 name = "DV"
 load_now = true
 

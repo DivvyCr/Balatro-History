@@ -1,0 +1,3 @@
+[submodule "lib/Balatro-Settings"]
+	path = lib/Balatro-Settings
+	url = https://github.com/DivvyCr/Balatro-Settings
