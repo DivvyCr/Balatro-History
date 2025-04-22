@@ -4,6 +4,8 @@
 
 if not DV then DV = {} end
 
+if DV.HIST then error("Cannot load Divvy's History multiple times!") end
+
 DV.HIST = {
    -- TODO: Move key data into `G.GAME.DV`?
    history = {},
