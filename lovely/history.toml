@@ -62,8 +62,8 @@ payload = "DV.HIST.queue_save_manager()"
 
 [[patches]]
 [patches.module]
-source = "SaveManager.lua"
-before = "src/engine/save_manager.lua"
+source = "src/SaveManager.lua"
+before = "engine/save_manager.lua"
 name = "DV"
 load_now = true
 
