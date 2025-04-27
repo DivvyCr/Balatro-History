@@ -1,0 +1,19 @@
+{
+	"id": "DVHistory",
+	"name": "Divvy's History",
+	"author": ["Divvy C."],
+	"description": "Save and load any number of runs! Also, view the history of your played hands and shop purchases!",
+	"prefix": "dvhistory",
+	"main_file": "lib/steamodded.lua",
+	"priority": 0,
+	"badge_colour": "6495ED",
+	"badge_text_colour": "FFFFFF",
+	"version": "3.0.0",
+	"dependencies": [
+		"Lovely (>=0.6)"
+	],
+	"conflicts": [
+		"Talisman (>=0.0)"
+	],
+	"dump_loc": false
+}
